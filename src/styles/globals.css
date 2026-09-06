@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-warm: #FAF7F2;
+    --bg-card: #FFFFFF;
+    --bg-card-muted: #F5F0E8;
+    --border-warm: #E6DFD5;
+    --text-main: #2D2A26;
+    --text-muted: #78716A;
+    --terracotta: #DA7756;
+    --terracotta-hover: #C86446;
+    --terracotta-light: #FDF3EF;
+    --sage: #6E8B74;
+    --sage-light: #F0F4F1;
+  }
+
+  body {
+    background-color: var(--bg-warm);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .font-serif-accent {
+    font-family: 'Instrument Serif', Georgia, serif;
+  }
+}
+
+/* Custom subtle animations */
+@keyframes warmPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.03); opacity: 0.95; }
+}
+
+.animate-warm-pulse {
+  animation: warmPulse 3s ease-in-out infinite;
+}
+
+/* Custom scrollbar hide for zero scroll look */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
