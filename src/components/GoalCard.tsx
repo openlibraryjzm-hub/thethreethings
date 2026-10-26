@@ -1,8 +1,10 @@
 import React, { useRef, useEffect } from 'react';
 import { Goal } from '../types';
-import { Check, Trash2, RotateCcw, Sparkles } from 'lucide-react';
+import { Trash2, RotateCcw, Plus, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { SlideToComplete } from './SlideToComplete';
+import { playCompletionSound } from '../utils/sound';
 
 interface GoalCardProps {
   goal: Goal;
@@ -32,16 +34,26 @@ export const GoalCard: React.FC<GoalCardProps> = ({
   const handleComplete = () => {
     if (goal.isCompleted) return;
 
+    // Play tactile acoustic celebratory sound
+    playCompletionSound();
+
     // Trigger celebration confetti with warm tones
     confetti({
-      particleCount: 45,
-      spread: 60,
+      particleCount: 50,
+      spread: 65,
       origin: { y: 0.6 },
       colors: ['#DA7756', '#6E8B74', '#F5F0E8', '#C86446'],
       disableForReducedMotion: true,
     });
 
     onCompleteGoal(goal.id);
+  };
+
+  const handleNewGoal = () => {
+    onClearGoal(goal.id);
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 50);
   };
 
   const indexLabel = String(index + 1).padStart(2, '0');
@@ -72,8 +84,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
         <button
           onClick={() => onClearGoal(goal.id)}
-          className="p-2 text-[#78716A]/50 hover:text-[#DA7756] hover:bg-[#FAF7F2] rounded-2xl transition-colors"
-          title="Clear this goal"
+          className="p-2 text-[#78716A]/50 hover:text-[#DA7756] hover:bg-[#FAF7F2] rounded-2xl transition-colors cursor-pointer"
+          title="Clear card contents"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -103,33 +115,32 @@ export const GoalCard: React.FC<GoalCardProps> = ({
         )}
       </div>
 
-      {/* Card Footer: Action Button */}
+      {/* Card Footer: Action Controls */}
       <div className="pt-4 border-t border-[#E6DFD5]/60">
         {goal.isCompleted ? (
-          <button
-            onClick={() => onUpdateGoal(goal.id, { isCompleted: false })}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white hover:bg-[#FAF7F2] border border-[#E6DFD5] text-xs font-semibold text-[#78716A] hover:text-[#2D2A26] transition-all"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>Reset Goal</span>
-          </button>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              onClick={() => onUpdateGoal(goal.id, { isCompleted: false })}
+              className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-2xl bg-white hover:bg-[#FAF7F2] border border-[#E6DFD5] text-xs font-semibold text-[#78716A] hover:text-[#2D2A26] transition-all cursor-pointer shadow-2xs"
+              title="Keep this goal and mark it incomplete"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Goal</span>
+            </button>
+            <button
+              onClick={handleNewGoal}
+              className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-2xl bg-[#DA7756] hover:bg-[#C86446] text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
+              title="Clear this slot to start a blank new goal"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>New Goal</span>
+            </button>
+          </div>
         ) : (
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleComplete}
+          <SlideToComplete
+            onComplete={handleComplete}
             disabled={!goal.title.trim()}
-            className={`w-full flex items-center justify-center gap-2.5 py-3.5 px-5 rounded-2xl font-semibold text-sm transition-all duration-200 shadow-xs ${
-              goal.title.trim()
-                ? 'bg-[#DA7756] hover:bg-[#C86446] text-white cursor-pointer shadow-sm'
-                : 'bg-[#E6DFD5]/60 text-[#78716A]/50 cursor-not-allowed'
-            }`}
-          >
-            <div className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center">
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
-            </div>
-            <span>Complete Goal</span>
-          </motion.button>
+          />
         )}
       </div>
     </motion.div>
