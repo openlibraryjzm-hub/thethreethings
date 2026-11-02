@@ -5,11 +5,17 @@ import { ChevronRight, Check } from 'lucide-react';
 interface SlideToCompleteProps {
   onComplete: () => void;
   disabled?: boolean;
+  disabledLabel?: string;
+  completeLabel?: string;
+  className?: string;
 }
 
 export const SlideToComplete: React.FC<SlideToCompleteProps> = ({
   onComplete,
   disabled = false,
+  disabledLabel = 'Enter a goal to unlock',
+  completeLabel = 'Slide to complete',
+  className = '',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -137,7 +143,7 @@ export const SlideToComplete: React.FC<SlideToCompleteProps> = ({
         disabled
           ? 'bg-[#F5F0E8]/70 border-[#E6DFD5] opacity-70 cursor-not-allowed'
           : 'bg-[#FAF7F2] border-[#E6DFD5] shadow-2xs'
-      }`}
+      } ${className}`}
     >
       {/* Background fill tracking knob progress */}
       {!disabled && (
@@ -160,11 +166,11 @@ export const SlideToComplete: React.FC<SlideToCompleteProps> = ({
       >
         {disabled ? (
           <span className="text-xs font-semibold tracking-wide text-[#78716A]/60">
-            Enter a goal to unlock
+            {disabledLabel}
           </span>
         ) : (
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[#78716A] uppercase tracking-wider">
-            <span>Slide to complete</span>
+            <span>{completeLabel}</span>
             <motion.span
               animate={{ x: [0, 4, 0] }}
               transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
@@ -193,7 +199,7 @@ export const SlideToComplete: React.FC<SlideToCompleteProps> = ({
             ? 'bg-[#C86446] text-white cursor-grabbing shadow-md scale-102'
             : 'bg-[#DA7756] hover:bg-[#C86446] text-white cursor-grab shadow-sm'
         }`}
-        title={disabled ? 'Enter a goal to unlock' : 'Slide to complete this goal'}
+        title={disabled ? disabledLabel : completeLabel}
       >
         {isCompleted ? (
           <Check className="w-5 h-5 stroke-[2.5]" />

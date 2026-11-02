@@ -1,3 +1,5 @@
+export type ActiveView = 'focus' | 'completed' | 'media';
+
 export interface Goal {
   id: string;
   title: string;

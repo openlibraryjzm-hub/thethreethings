@@ -1,9 +1,10 @@
 import React from 'react';
-import { Target, LayoutGrid, CheckCircle2 } from 'lucide-react';
+import { Target, LayoutGrid, CheckCircle2, Film } from 'lucide-react';
+import { ActiveView } from '../types';
 
 interface HeaderProps {
-  activeView: 'focus' | 'completed';
-  onSelectView: (view: 'focus' | 'completed') => void;
+  activeView: ActiveView;
+  onSelectView: (view: ActiveView) => void;
   completedCount: number;
 }
 
@@ -23,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
         </span>
       </div>
 
-      {/* Navigation Buttons: Focus vs Completed */}
+      {/* Navigation Buttons: Focus vs Completed vs Media */}
       <div className="flex items-center gap-1.5 bg-[#E6DFD5]/50 p-1 rounded-2xl border border-[#E6DFD5]">
         <button
           onClick={() => onSelectView('focus')}
@@ -52,6 +53,18 @@ export const Header: React.FC<HeaderProps> = ({
               {completedCount}
             </span>
           )}
+        </button>
+
+        <button
+          onClick={() => onSelectView('media')}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeView === 'media'
+              ? 'bg-white text-[#2D2A26] shadow-xs'
+              : 'text-[#78716A] hover:text-[#2D2A26]'
+          }`}
+        >
+          <Film className="w-3.5 h-3.5 text-[#DA7756]" />
+          <span>Media</span>
         </button>
       </div>
     </header>

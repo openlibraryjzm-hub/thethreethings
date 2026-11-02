@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Goal, AppState } from './types';
+import { Goal, AppState, ActiveView } from './types';
 import { Header } from './components/Header';
 import { GoalCard } from './components/GoalCard';
 import { CompletedView } from './components/CompletedView';
+import { MediaView } from './components/MediaView';
 
 const STORAGE_KEY = 'the_three_things_app_state_v3';
 
@@ -38,7 +39,7 @@ const ensureThreeGoals = (goals: Goal[]): Goal[] => {
 };
 
 export const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<'focus' | 'completed'>('focus');
+  const [activeView, setActiveView] = useState<ActiveView>('focus');
 
   const [state, setState] = useState<AppState>(() => {
     try {
@@ -160,12 +161,15 @@ export const App: React.FC = () => {
             ))}
           </div>
         </main>
-      ) : (
+      ) : activeView === 'completed' ? (
         /* Completed History Screen */
         <CompletedView
           completedHistory={state.completedHistory}
           onDeleteCompletedGoal={handleDeleteCompletedGoal}
         />
+      ) : (
+        /* Media Screen */
+        <MediaView />
       )}
     </div>
   );

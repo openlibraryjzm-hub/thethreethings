@@ -8,7 +8,7 @@
 
 **The Three Things** is designed to feel calm, tactile, and intentional — like a physical desk paper pad rather than an overwhelming project management dashboard.
 
-Users focus on setting their top 3 daily priorities on a clean Focus screen. When a goal is accomplished, completing it triggers a tactile gesture, celebratory acoustic feedback, and permanently logs the task into an archive.
+Users focus on setting their top 3 daily priorities on a clean Focus screen. When a goal is accomplished, completing it triggers a tactile gesture, celebratory acoustic feedback, and permanently logs the task into an archive. A dedicated Media tab allows tracking books, shows, and serialized items with artwork and minimalist terminal progress counters.
 
 ---
 
@@ -44,7 +44,7 @@ The app uses warm, earthy paper tones to minimize eye strain and evoke physical 
 - **Sound Synthesis:** Web Audio API (offline, zero-latency harmonic acoustic chimes)
 - **Effects:** Canvas Confetti
 - **Desktop Application Wrapper:** Tauri v2 (Rust backend wrapper)
-- **Persistence:** Synchronous `localStorage` serialization (`the_three_things_app_state_v3`)
+- **Persistence:** Synchronous `localStorage` serialization (`the_three_things_app_state_v3`, `the_three_things_media_cards_v1`)
 
 ---
 
@@ -54,24 +54,27 @@ The app uses warm, earthy paper tones to minimize eye strain and evoke physical 
 the-three-things/
 ├── docs/
 │   ├── FOCUS_VIEW.md          # In-depth guide: 3 permanent slots, slide-to-complete, sound & confetti
-│   └── COMPLETED_VIEW.md      # In-depth guide: history archive, filtering, calendar popover, pagination
+│   ├── COMPLETED_VIEW.md      # In-depth guide: history archive, filtering, calendar popover, pagination
+│   └── MEDIA.md               # In-depth guide: 4 stacked cards, terminal counter, image compression
 ├── src/
 │   ├── components/
 │   │   ├── Header.tsx         # Top bar with logo, "One day at a time" badge, and view tabs
 │   │   ├── GoalCard.tsx       # Focus screen 3-card grid item with auto-resizing input
 │   │   ├── SlideToComplete.tsx# Tactile slide knob preventing accidental completions
 │   │   ├── CalendarPopover.tsx# In-app calendar popover with accomplishment activity dots
-│   │   └── CompletedView.tsx  # Completed history page with filtering and 50/page pagination
+│   │   ├── CompletedView.tsx  # Completed history page with filtering and 50/page pagination
+│   │   └── MediaView.tsx      # Media screen with 4 fixed cards, artwork upload, and counter
 │   ├── utils/
 │   │   └── sound.ts           # Web Audio API harmonic chime & tactile stamp sound effect
 │   ├── types/
-│   │   └── index.ts           # TypeScript definitions for Goal and AppState
+│   │   └── index.ts           # TypeScript definitions for Goal, AppState, and ActiveView
 │   ├── styles/
 │   │   └── globals.css        # Tailwind CSS imports, color tokens, and custom scrollbar
 │   ├── App.tsx                # Root state management, persistence, and view switching
 │   └── main.tsx               # Application entry point
 ├── src-tauri/                 # Tauri v2 native desktop configuration & Rust files
 ├── package.json               # NPM scripts & dependencies
+├── media.md                   # Dedicated context guide for the Media tab
 └── README.md                  # This file
 ```
 
@@ -82,6 +85,8 @@ the-three-things/
 Defined in [`src/types/index.ts`](file:///c:/Users/GGPC/Desktop/todaysthree/src/types/index.ts):
 
 ```typescript
+export type ActiveView = 'focus' | 'completed' | 'media';
+
 export interface Goal {
   id: string;          // Unique ID (e.g. 'goal-1' on focus screen, or timestamped ID in history)
   title: string;       // Text content of the goal
@@ -112,6 +117,11 @@ For detailed functional specifications and component mechanics, refer to the ded
   - Timeframe filters: Today, Yesterday, All Time
   - Custom in-app calendar popover with accomplishment activity dots
   - 50-items-per-page pagination and scroll container behavior
+- 🎬 **[Media View Specification](media.md)**
+  - Curated editorial Monthly Theme card & 4-slot media queue
+  - Enforced locked card dimensions (`h-[230px] md:h-[240px]`) with fixed image frame (`h-[152px] md:h-[162px]`)
+  - Tactile slide-to-complete button with warm confetti and acoustic chime feedback
+  - Drag-and-drop media artwork upload with client-side canvas compression
 
 ---
 
@@ -119,7 +129,7 @@ For detailed functional specifications and component mechanics, refer to the ded
 
 | Command | Description |
 | :--- | :--- |
-| `npm run dev` | Start the local Vite development server (`http://localhost:1420`) |
+| `npm run dev` | Start the local Vite development server (`http://localhost:1421`) |
 | `npm run tauri dev` | Launch the app inside the native Tauri desktop window in dev mode |
 | `npm run build` | Run TypeScript type checks (`tsc`) & production build (`vite build`) |
 | `npm run preview` | Preview production build locally |
@@ -129,5 +139,7 @@ For detailed functional specifications and component mechanics, refer to the ded
 ## 💡 Guidelines for Developers & AI Assistants
 
 1. **Maintain Palette Integrity:** Strictly use the warm cream (`#FAF7F2`), terracotta (`#DA7756`), and sage (`#6E8B74`) palette. Avoid default cold blues or jarring dark-mode toggles.
-2. **Permanent 3 Goals Rule:** Never allow the Focus screen to drop below or exceed 3 cards. Cards must never be removed from the view.
+2. **Permanent Slots Rules:**
+   - Focus screen: exactly 3 cards (`ensureThreeGoals`).
+   - Media screen: exactly 4 cards with locked card bounds.
 3. **Always Run Type Checks:** Before completing changes, verify build health with `npm run build` (`tsc && vite build`).
