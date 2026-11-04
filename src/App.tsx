@@ -80,14 +80,55 @@ export const App: React.FC = () => {
     }));
   };
 
-  const handleCompleteGoal = (id: string) => {
+  const handleCompleteGoal = (
+    id: string,
+    completedSubGoals?: string[],
+    remainingTitle?: string
+  ) => {
     setState((prev) => {
       const targetGoal = prev.goals.find((g) => g.id === id);
       if (!targetGoal || targetGoal.isCompleted) return prev;
 
       const completedTimestamp = Date.now();
-      // Generate a distinct unique ID for every completed archive entry
-      // so completing any slot accumulates an unlimited accomplishment history
+
+      // Handle sub-goals completion when '//' separator was used
+      if (completedSubGoals && completedSubGoals.length > 0) {
+        const newCompletedHistoryItems: Goal[] = completedSubGoals.map((subTitle, idx) => ({
+          id: `completed-${completedTimestamp}-${idx}-${Math.random().toString(36).slice(2, 8)}`,
+          title: subTitle,
+          isCompleted: true,
+          completedAt: completedTimestamp + idx,
+        }));
+
+        const hasRemaining = typeof remainingTitle === 'string' && remainingTitle.trim().length > 0;
+
+        return {
+          ...prev,
+          totalCompletedCount: prev.totalCompletedCount + completedSubGoals.length,
+          goals: prev.goals.map((g) => {
+            if (g.id !== id) return g;
+            if (hasRemaining) {
+              // Unselected sub-goals remain active in the card slot
+              return {
+                ...g,
+                title: remainingTitle.trim(),
+                isCompleted: false,
+                completedAt: undefined,
+              };
+            } else {
+              // All sub-goals completed: slot is fully completed
+              return {
+                ...g,
+                isCompleted: true,
+                completedAt: completedTimestamp,
+              };
+            }
+          }),
+          completedHistory: [...newCompletedHistoryItems, ...prev.completedHistory],
+        };
+      }
+
+      // Standard single goal completion
       const uniqueCompletedId = `completed-${completedTimestamp}-${Math.random().toString(36).slice(2, 8)}`;
       const completedGoalItem: Goal = {
         ...targetGoal,

@@ -111,6 +111,7 @@ For detailed functional specifications and component mechanics, refer to the ded
 
 - 🎯 **[Focus View Specification](docs/FOCUS_VIEW.md)**
   - Fixed 3-card layout rules
+  - Sub-goal separation (`//`), multi-selection, and partial completion mechanics
   - Slide to Complete drag mechanics and threshold physics
   - Sound synthesis & celebration confetti
   - Post-completion actions ("Reset Goal" vs "New Goal")

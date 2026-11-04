@@ -36,12 +36,27 @@ src/
   - Placed at the top right of the card.
   - **Behavior:** Clicking the trash icon **only wipes the card contents back to blank** (`title: ''`, `isCompleted: false`). It never removes the card slot.
 
-### 2. Auto-Resizing Text Area
+### 2. Auto-Resizing Text Area & Sub-Goals Separator (`//`)
 - When active, an unbordered, background-blended textarea expands smoothly as the user types multi-line goals (`scrollHeight` measurement via `useEffect`).
 - Text size: `text-xl font-semibold text-[#2D2A26] placeholder-[#78716A]/40`.
 - Auto-focuses immediately when starting a new goal.
+- **Sub-Goal Separator (`//`):** Typing `//` divides a card into distinct sub-goals directly in continuous text form (e.g. `brush teeth // make bed`).
+  - No permission prompt is required; it activates automatically.
+  - Sub-goals remain in natural flowing text layout separated by `//`.
+  - Centered floating selection points sit directly above each sub-goal; tapping a point toggles that sub-goal orange to slide-to-complete.
+  - Single-clicking anywhere on the text or white space of the card immediately opens normal typing/editing.
+  - Empty cards are 100% 1-tap and type immediately without unlocking.
+  - Relatable placeholders (`Morning stretch // Brew coffee`, `Finish project draft // Clear inbox`, `20 min walk // Call mom`) educate users on the `//` separator with zero visual clutter.
+  - While typing or editing, the bottom slider morphs into a tactile **`[ Done ✓ ]`** button for intuitive, one-tap mobile saving.
 
-### 3. Completed State Presentation
+### 3. Sub-Goal Selection & Slide Gating
+- By default, the slider is **enabled** (`Slide to complete`); sliding it treats all sub-goals together as one full card completion.
+- When individual sub-goals are selected via their floating points:
+  - The slider dynamically updates to indicate the selection count (e.g. `Slide to complete (1)`).
+  - Sliding completes and archives only the selected sub-goals, keeping any unselected ones active in the card.
+- Celebration feedback (pentatonic chime + warm confetti) fires on every completion.
+
+### 4. Completed State Presentation
 - When completed, the goal title transitions to muted text with a sage strike-through decoration (`line-through decoration-[#6E8B74] decoration-2`).
 - A subtle pill badge displays `✨ Completed!` with sage background tint (`bg-[#6E8B74]/15 text-[#6E8B74]`).
 
@@ -57,9 +72,10 @@ To prevent accidental one-click completions from triggering an unearned accompli
   - Label: `"Enter a goal to unlock"`.
   - Non-draggable.
 - **Active Goal Card:**
-  - Enabled when `goal.title.trim()` contains text.
+  - Enabled whenever `goal.title.trim()` contains text.
   - Knob turns terracotta (`bg-[#DA7756] hover:bg-[#C86446] text-white cursor-grab`).
-  - Label: `"Slide to complete →"`.
+  - Default label: `"Slide to complete →"` (completes all sub-goals together if multiple exist).
+  - Sub-goal selection label: `"Slide to complete (N) →"` when individual sub-goals are highlighted via their floating points.
 
 ### 2. Interaction & Pointer Capture Mechanics
 - Uses native pointer capture (`setPointerCapture(e.pointerId)`) on `pointerDown` so dragging remains completely fluid across mouse, touchpads, and touchscreens without losing grip when moving quickly.
