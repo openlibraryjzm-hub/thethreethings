@@ -63,7 +63,8 @@ the-three-things/
 │   │   ├── SlideToComplete.tsx# Tactile slide knob preventing accidental completions
 │   │   ├── CalendarPopover.tsx# In-app calendar popover with accomplishment activity dots
 │   │   ├── CompletedView.tsx  # Completed history page with filtering and 50/page pagination
-│   │   └── MediaView.tsx      # Media screen with 4 fixed cards, artwork upload, and counter
+│   │   ├── MediaView.tsx      # Media screen with 4 fixed cards, artwork upload, and counter
+│   │   └── HealthView.tsx     # Health screen with dynamic time greeting & untracked care reminders
 │   ├── utils/
 │   │   └── sound.ts           # Web Audio API harmonic chime & tactile stamp sound effect
 │   ├── types/
@@ -74,6 +75,7 @@ the-three-things/
 │   └── main.tsx               # Application entry point
 ├── src-tauri/                 # Tauri v2 native desktop configuration & Rust files
 ├── package.json               # NPM scripts & dependencies
+├── health.md                  # Dedicated context guide for the Health tab
 ├── media.md                   # Dedicated context guide for the Media tab
 └── README.md                  # This file
 ```
@@ -85,7 +87,7 @@ the-three-things/
 Defined in [`src/types/index.ts`](file:///c:/Users/GGPC/Desktop/todaysthree/src/types/index.ts):
 
 ```typescript
-export type ActiveView = 'focus' | 'completed' | 'media';
+export type ActiveView = 'focus' | 'completed' | 'media' | 'health';
 
 export interface Goal {
   id: string;          // Unique ID (e.g. 'goal-1' on focus screen, or timestamped ID in history)
@@ -122,6 +124,11 @@ For detailed functional specifications and component mechanics, refer to the ded
   - Enforced locked card dimensions (`h-[230px] md:h-[240px]`) with fixed image frame (`h-[152px] md:h-[162px]`)
   - Tactile slide-to-complete button with warm confetti and acoustic chime feedback
   - Drag-and-drop media artwork upload with client-side canvas compression
+- 🌿 **[Health View Specification](health.md)**
+  - Dynamic time-of-day greeting (*"Good morning"*, *"Good afternoon"*, *"Good evening"*)
+  - Pure present-moment reminder (completely untracked, zero catch-up prompts or streak pressure)
+  - 4 tactile vector items: Toothbrush, Glass of Water, Mouth Wash, Tooth Floss
+  - Time-aware display rule: Mouth wash and tooth floss appear only in morning and evening; afternoon gracefully collapses to Toothbrush and Glass of Water
 
 ---
 

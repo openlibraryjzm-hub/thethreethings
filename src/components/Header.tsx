@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, LayoutGrid, CheckCircle2, Film } from 'lucide-react';
+import { Target, LayoutGrid, CheckCircle2, Film, HeartPulse } from 'lucide-react';
 import { ActiveView } from '../types';
 
 interface HeaderProps {
@@ -65,6 +65,18 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Film className="w-3.5 h-3.5 text-[#DA7756]" />
           <span>Media</span>
+        </button>
+
+        <button
+          onClick={() => onSelectView('health')}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeView === 'health'
+              ? 'bg-white text-[#2D2A26] shadow-xs'
+              : 'text-[#78716A] hover:text-[#2D2A26]'
+          }`}
+        >
+          <HeartPulse className="w-3.5 h-3.5 text-[#DA7756]" />
+          <span>Health</span>
         </button>
       </div>
     </header>

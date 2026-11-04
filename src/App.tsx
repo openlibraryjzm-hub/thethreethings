@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { GoalCard } from './components/GoalCard';
 import { CompletedView } from './components/CompletedView';
 import { MediaView } from './components/MediaView';
+import { HealthView } from './components/HealthView';
 
 const STORAGE_KEY = 'the_three_things_app_state_v3';
 
@@ -167,9 +168,12 @@ export const App: React.FC = () => {
           completedHistory={state.completedHistory}
           onDeleteCompletedGoal={handleDeleteCompletedGoal}
         />
-      ) : (
+      ) : activeView === 'media' ? (
         /* Media Screen */
         <MediaView />
+      ) : (
+        /* Health Screen */
+        <HealthView />
       )}
     </div>
   );
