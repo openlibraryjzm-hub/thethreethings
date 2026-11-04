@@ -75,6 +75,7 @@ the-three-things/
 │   └── main.tsx               # Application entry point
 ├── src-tauri/                 # Tauri v2 native desktop configuration & Rust files
 ├── package.json               # NPM scripts & dependencies
+├── navbar.md                  # Dedicated context guide for the Header & Navigation bar
 ├── health.md                  # Dedicated context guide for the Health tab
 ├── media.md                   # Dedicated context guide for the Media tab
 └── README.md                  # This file
@@ -87,7 +88,7 @@ the-three-things/
 Defined in [`src/types/index.ts`](file:///c:/Users/GGPC/Desktop/todaysthree/src/types/index.ts):
 
 ```typescript
-export type ActiveView = 'focus' | 'completed' | 'media' | 'health';
+export type ActiveView = 'focus' | 'completed' | 'media' | 'health' | 'tip' | 'support';
 
 export interface Goal {
   id: string;          // Unique ID (e.g. 'goal-1' on focus screen, or timestamped ID in history)
@@ -109,6 +110,10 @@ export interface AppState {
 
 For detailed functional specifications and component mechanics, refer to the dedicated view guides:
 
+- 🧭 **[Navigation Bar Specification](navbar.md)**
+  - Adaptive active label vs. inactive icon-only tab interaction
+  - 5-space hierarchy: Focus, Media, Health, Tip, Support
+  - Decoupling of completed history access to preserve 3-card grid isolation
 - 🎯 **[Focus View Specification](docs/FOCUS_VIEW.md)**
   - Fixed 3-card layout rules
   - Sub-goal separation (`//`), multi-selection, and partial completion mechanics

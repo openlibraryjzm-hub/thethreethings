@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Goal, AppState, ActiveView } from './types';
+import { CheckCircle2 } from 'lucide-react';
 import { Header } from './components/Header';
 import { GoalCard } from './components/GoalCard';
 import { CompletedView } from './components/CompletedView';
 import { MediaView } from './components/MediaView';
 import { HealthView } from './components/HealthView';
+import { TipView } from './components/TipView';
+import { SupportView } from './components/SupportView';
 
 const STORAGE_KEY = 'the_three_things_app_state_v3';
 
@@ -178,19 +181,30 @@ export const App: React.FC = () => {
       {/* Conditional View Rendering */}
       {activeView === 'focus' ? (
         /* Main Focus Screen Content: Fixed 3 Goal Cards */
-        <main className="flex-1 min-h-0 px-8 py-6 flex flex-col justify-center max-w-7xl w-full mx-auto overflow-hidden">
-          {/* Section Subtitle */}
+        <main className="flex-1 min-h-0 px-4 md:px-8 py-4 md:py-6 flex flex-col justify-start md:justify-center max-w-7xl w-full mx-auto overflow-y-auto md:overflow-hidden">
+          {/* Section Subtitle & Completed Counter */}
           <div className="flex items-center justify-between mb-4 px-2">
             <p className="text-xs uppercase tracking-widest text-[#78716A] font-semibold">
               Today's 3 Things
             </p>
-            <span className="text-xs text-[#78716A]/70 font-medium italic">
-              Focus on what matters today
-            </span>
+            <button
+              onClick={() => setActiveView('completed')}
+              className="group inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E6DFD5]/40 hover:bg-[#E6DFD5]/80 border border-[#E6DFD5] text-xs text-[#78716A] hover:text-[#2D2A26] transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+              title="View all completed goals in history"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#6E8B74]" />
+              <span className="font-medium">
+                <strong className="font-semibold text-[#2D2A26]">{state.completedHistory.length}</strong>{' '}
+                {state.completedHistory.length === 1 ? 'goal' : 'goals'} completed
+              </span>
+              <span className="text-[#DA7756] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                · View all →
+              </span>
+            </button>
           </div>
 
           {/* Fixed 3 Goal Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100%-2rem)] items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-[calc(100%-2rem)] items-stretch">
             {state.goals.map((goal, idx) => (
               <GoalCard
                 key={goal.id}
@@ -208,13 +222,20 @@ export const App: React.FC = () => {
         <CompletedView
           completedHistory={state.completedHistory}
           onDeleteCompletedGoal={handleDeleteCompletedGoal}
+          onBackToFocus={() => setActiveView('focus')}
         />
       ) : activeView === 'media' ? (
         /* Media Screen */
         <MediaView />
-      ) : (
+      ) : activeView === 'health' ? (
         /* Health Screen */
         <HealthView />
+      ) : activeView === 'tip' ? (
+        /* Tip Placeholder Screen */
+        <TipView />
+      ) : (
+        /* Support Placeholder Screen */
+        <SupportView />
       )}
     </div>
   );

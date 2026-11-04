@@ -1,4 +1,4 @@
-export type ActiveView = 'focus' | 'completed' | 'media' | 'health';
+export type ActiveView = 'focus' | 'completed' | 'media' | 'health' | 'tip' | 'support';
 
 export interface Goal {
   id: string;

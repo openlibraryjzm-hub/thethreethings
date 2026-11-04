@@ -222,7 +222,7 @@ export const MediaView: React.FC = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="w-full h-[230px] md:h-[240px] rounded-3xl p-6 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden border border-[#E2D8CC] bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE6]"
+          className="w-full h-[270px] md:h-[285px] rounded-3xl p-6 md:p-7 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden border border-[#E2D8CC] bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE6]"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch h-full">
             {/* LEFT HALF */}
@@ -258,28 +258,37 @@ export const MediaView: React.FC = () => {
               <div className="h-2 shrink-0" />
             </div>
 
-            {/* RIGHT HALF: Cascading / Overlapping Circles sitting directly in the month card */}
+            {/* RIGHT HALF: 2x2 Grid with prominent dead-center focal circle */}
             <div className="relative h-full w-full flex items-center justify-center select-none overflow-hidden">
-              <div className="flex items-center -space-x-6 md:-space-x-8">
-                {cards.map((card, i) => (
-                  <div
-                    key={card.id || i}
-                    style={{ zIndex: 40 - i * 10 }}
-                    className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg ring-1 ring-[#DA7756]/15 overflow-hidden bg-[#FAF6EE] flex items-center justify-center shrink-0"
-                  >
-                    {card.imageUrl ? (
-                      <img
-                        src={card.imageUrl}
-                        alt={card.mediaTitle || card.title || `Media ${card.indexLabel}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-lg md:text-xl font-serif-accent font-bold text-[#DA7756]/50 italic select-none">
-                        {card.indexLabel}
-                      </span>
-                    )}
+              <div className="relative w-full h-[195px] md:h-[215px] rounded-2xl md:rounded-3xl border border-[#E6DFD5] bg-[#E6DFD5] shadow-xs">
+                {/* 2x2 Quadrant Grid */}
+                <div className="w-full h-full rounded-2xl md:rounded-3xl overflow-hidden grid grid-cols-2 grid-rows-2 gap-[1px]">
+                  {cards.map((card, i) => (
+                    <div
+                      key={card.id || i}
+                      className="relative overflow-hidden flex items-center justify-center bg-[#FAF6EE] w-full h-full"
+                    >
+                      {card.imageUrl ? (
+                        <img
+                          src={card.imageUrl}
+                          alt={card.mediaTitle || card.title || `Media ${card.indexLabel}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-sm md:text-base font-serif-accent font-bold text-[#DA7756]/50 italic select-none">
+                          {card.indexLabel}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Prominent Dead-Center Focal Circle: Perfectly balanced across all 4 quadrants */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-xl bg-[#FAF6EE] ring-1 ring-[#DA7756]/25 flex items-center justify-center overflow-hidden transition-transform duration-200 hover:scale-105">
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE6]">
+                    <Sparkles className="w-8 h-8 md:w-9 md:h-9 text-[#DA7756]" />
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>

@@ -12,6 +12,7 @@ The Focus View is the primary screen of **The Three Things**. It provides a calm
 - **Fixed Slots:** The Focus View always displays exactly three goal cards (`01`, `02`, `03`).
 - **No Slot Deletion:** Cards are permanent fixtures. Under no circumstances should a card be deleted, removed from the grid, or require manual creation via an "Add Slot" action.
 - **State Normalization:** The app enforces `ensureThreeGoals` on startup, automatically healing any legacy or corrupt local storage states to guarantee 3 permanent slots.
+- **Completed History Access Point:** Rather than cluttering the top navigation bar, completed history is accessed directly via a quiet counter pill in the Focus subheader (`{N} goals completed · View all →`). Placing this in the header row outside the grid preserves exactly 3 cards on both desktop (1x3 horizontal) and mobile (3x1 vertical stack).
 
 ---
 

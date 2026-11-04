@@ -47,14 +47,17 @@ Positioned prominently at the top of the Media view, the Monthly Theme card anch
 - **Theme Title Input:** A 2-line auto-wrapping text area in bold charcoal (`text-xl md:text-2xl font-bold text-[#2D2A26]`), allowing the full placeholder prompt and multi-line themes to display naturally.
 - **Clear Button:** Top-right trash icon to wipe the theme title back to empty.
 
-### 2. Right Half: Large Cascading Overlapping Circles
+### 2. Right Half: 2x2 Grid Mosaic Frame with Prominent Focal Centerpiece
 - Automatically mirrors the artwork from queue cards `01`, `02`, `03`, and `04` below in real-time.
-- Styled as an enlarged overlapping avatar stack directly resting on the card surface (no nested rounded inner box):
-  - **Leftmost Circle (Card 01):** 100% fully visible in the foreground (`z-40`).
-  - **Subsequent Circles (Cards 02, 03, 04):** Sequentially cascade and overlap beneath with decreasing z-index (`z-30`, `z-20`, `z-10`).
-  - **Size & Borders:** Enlarged circles (`w-24 h-24` up to `md:w-32 md:h-32`) with thick cutout borders (`border-4 border-white shadow-lg ring-1 ring-[#DA7756]/15`).
-  - When empty, displays a warm paper circle with the serif italic numeral (`01`, `02`, `03`, `04`).
-- Read-only visual stack: no manual upload needed on this card.
+- Styled as a unified rounded rectangle (`w-full h-[195px] md:h-[215px] rounded-2xl md:rounded-3xl border border-[#E6DFD5] bg-[#E6DFD5] shadow-xs`) split into a 2x2 quadrant grid:
+  - **Quadrant 1 (Top-Left):** Mirrors Card `01`.
+  - **Quadrant 2 (Top-Right):** Mirrors Card `02`.
+  - **Quadrant 3 (Bottom-Left):** Mirrors Card `03`.
+  - **Quadrant 4 (Bottom-Right):** Mirrors Card `04`.
+  - **Dividers:** Clean 1px crosshair separation revealing the warm `#E6DFD5` border between cells.
+  - **Prominent Dead-Center Focal Circle:** A hero centerpiece circular seal (`w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-xl bg-[#FAF6EE] ring-1 ring-[#DA7756]/25`) anchored precisely at `50% X / 50% Y`, ensuring equal, symmetrical 25% overlap across all 4 quadrants as a prominent thumbnail representing all media.
+  - **Content:** When artwork is uploaded, fills the quadrant (`object-cover`). When empty, displays a warm paper tile (`#FAF6EE`) with the serif italic numeral (`01`, `02`, `03`, `04`).
+- Read-only visual mosaic: no manual upload needed on this card.
 
 ---
 

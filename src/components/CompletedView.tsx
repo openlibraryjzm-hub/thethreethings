@@ -8,6 +8,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarPopover } from './CalendarPopover';
@@ -15,6 +16,7 @@ import { CalendarPopover } from './CalendarPopover';
 interface CompletedViewProps {
   completedHistory: Goal[];
   onDeleteCompletedGoal: (id: string) => void;
+  onBackToFocus?: () => void;
 }
 
 interface GroupedGoals {
@@ -30,6 +32,7 @@ const ITEMS_PER_PAGE = 50;
 export const CompletedView: React.FC<CompletedViewProps> = ({
   completedHistory,
   onDeleteCompletedGoal,
+  onBackToFocus,
 }) => {
   const [filter, setFilter] = useState<FilterType>('all');
   const [customDate, setCustomDate] = useState<string>(''); // YYYY-MM-DD
@@ -199,6 +202,15 @@ export const CompletedView: React.FC<CompletedViewProps> = ({
         <p className="text-sm text-[#78716A] max-w-sm">
           Complete goals on your daily Focus screen to start building your accomplishment history!
         </p>
+        {onBackToFocus && (
+          <button
+            onClick={onBackToFocus}
+            className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#DA7756] hover:bg-[#C86446] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to Focus</span>
+          </button>
+        )}
       </main>
     );
   }
@@ -208,6 +220,15 @@ export const CompletedView: React.FC<CompletedViewProps> = ({
       {/* Top Header & Filter Controls Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
+          {onBackToFocus && (
+            <button
+              onClick={onBackToFocus}
+              className="group inline-flex items-center gap-1.5 text-xs font-semibold text-[#78716A] hover:text-[#DA7756] transition-colors mb-2 cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+              <span>Back to Focus</span>
+            </button>
+          )}
           <h1 className="text-xl font-bold text-[#2D2A26]">Completed History</h1>
           <p className="text-xs text-[#78716A] mt-0.5">
             {totalFiltered} goal{totalFiltered === 1 ? '' : 's'} found
