@@ -63,8 +63,8 @@ the-three-things/
 │   │   ├── SlideToComplete.tsx# Tactile slide knob preventing accidental completions
 │   │   ├── CalendarPopover.tsx# In-app calendar popover with accomplishment activity dots
 │   │   ├── CompletedView.tsx  # Completed history page with filtering and 50/page pagination
-│   │   ├── MediaView.tsx      # Media screen with 4 fixed cards, artwork upload, and counter
-│   │   └── HealthView.tsx     # Health screen with dynamic time greeting & untracked care reminders
+│   │   ├── PainPointsView.tsx # Physics-based stone cairn stack for persistent life pain points
+│   │   ├── HealthView.tsx     # Health screen with dynamic time greeting & untracked care reminders
 │   ├── utils/
 │   │   └── sound.ts           # Web Audio API harmonic chime & tactile stamp sound effect
 │   ├── types/
@@ -77,7 +77,7 @@ the-three-things/
 ├── package.json               # NPM scripts & dependencies
 ├── navbar.md                  # Dedicated context guide for the Header & Navigation bar
 ├── health.md                  # Dedicated context guide for the Health tab
-├── media.md                   # Dedicated context guide for the Media tab
+├── painpoint.md               # Dedicated context guide for the Pain Points tab
 ├── build.md                   # Dedicated guide for Android APK builds & device deployment
 └── README.md                  # This file
 ```
@@ -126,11 +126,11 @@ For detailed functional specifications and component mechanics, refer to the ded
   - Timeframe filters: Today, Yesterday, All Time
   - Custom in-app calendar popover with accomplishment activity dots
   - 50-items-per-page pagination and scroll container behavior
-- 🎬 **[Media View Specification](media.md)**
-  - Curated editorial Monthly Theme card & 4-slot media queue
-  - Enforced locked card dimensions (`h-[230px] md:h-[240px]`) with fixed image frame (`h-[152px] md:h-[162px]`)
-  - Tactile slide-to-complete button with warm confetti and acoustic chime feedback
-  - Drag-and-drop media artwork upload with client-side canvas compression
+- ⛰️ **[Pain Points Specification](painpoint.md)**
+  - Confined word cloud chamber with organic typographic scaling
+  - Strict 26-character input limit keeping entries punchy and preventing sentence tasks
+  - Quick-glance friction reservoir that feeds directly into the 3 daily Focus goals
+  - One-tap keyword dismissal
 - 🌿 **[Health View Specification](health.md)**
   - Dynamic time-of-day greeting (*"Good morning"*, *"Good afternoon"*, *"Good evening"*)
   - Pure present-moment reminder (completely untracked, zero catch-up prompts or streak pressure)

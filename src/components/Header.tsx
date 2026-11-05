@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Rows3, Gamepad2, Apple, Lightbulb, Heart } from 'lucide-react';
+import { Target, Rows3, Mountain, Apple, Lightbulb, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActiveView } from '../types';
 
@@ -17,7 +17,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'focus', label: 'Focus', icon: Rows3 },
-  { id: 'media', label: 'Media', icon: Gamepad2 },
+  { id: 'painpoints', label: 'Pain Points', icon: Mountain },
   { id: 'health', label: 'Health', icon: Apple },
   { id: 'tip', label: 'Tip', icon: Lightbulb },
   { id: 'support', label: 'Support', icon: Heart },
@@ -28,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectView,
 }) => {
   return (
-    <header className="w-full flex items-center justify-between px-4 md:px-8 py-3.5 md:py-4 bg-[#F5F0E8]/80 backdrop-blur-md border-b border-[#E6DFD5]">
+    <header className="w-full flex items-center justify-between px-4 md:px-8 pt-[max(0.875rem,env(safe-area-inset-top))] pb-3.5 md:py-4 bg-[#F5F0E8]/80 backdrop-blur-md border-b border-[#E6DFD5]">
       {/* Brand Title with Subtitle Pill */}
       <div className="flex items-center gap-3">
         <span className="text-xl md:text-2xl font-serif-accent italic text-[#DA7756]">The Three Things</span>

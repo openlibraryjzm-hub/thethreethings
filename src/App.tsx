@@ -4,6 +4,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { Header } from './components/Header';
 import { GoalCard } from './components/GoalCard';
 import { CompletedView } from './components/CompletedView';
+import { PainPointsView } from './components/PainPointsView';
 import { MediaView } from './components/MediaView';
 import { HealthView } from './components/HealthView';
 import { TipView } from './components/TipView';
@@ -224,6 +225,9 @@ export const App: React.FC = () => {
           onDeleteCompletedGoal={handleDeleteCompletedGoal}
           onBackToFocus={() => setActiveView('focus')}
         />
+      ) : activeView === 'painpoints' ? (
+        /* Pain Points Screen */
+        <PainPointsView />
       ) : activeView === 'media' ? (
         /* Media Screen */
         <MediaView />

@@ -29,7 +29,7 @@ src/
 Defined in [`src/types/index.ts`](file:///c:/Users/GGPC/Desktop/todaysthree/src/types/index.ts):
 
 ```typescript
-export type ActiveView = 'focus' | 'completed' | 'media' | 'health' | 'tip' | 'support';
+export type ActiveView = 'focus' | 'completed' | 'painpoints' | 'health' | 'tip' | 'support' | 'media';
 ```
 
 ### 2. Header Component Interface
@@ -53,7 +53,7 @@ The navigation bar presents 5 core spaces in fixed left-to-right order:
 | Index | Space | View ID | Icon Component | Semantics & Purpose |
 | :---: | :--- | :--- | :--- | :--- |
 | **1** | **Focus** | `'focus'` | `<Rows3 />` | Primary desk-pad with exactly 3 daily goal cards (`01`, `02`, `03`). |
-| **2** | **Media** | `'media'` | `<Gamepad2 />` | 4-card media tracker queue, monthly editorial theme, and terminal counters. |
+| **2** | **Pain Points** | `'painpoints'` | `<Mountain />` | Confined friction word cloud reservoir feeding into the 3 daily Focus goals. |
 | **3** | **Health** | `'health'` | `<Apple />` | Untracked, time-aware daily self-care rituals (morning/afternoon/evening). |
 | **4** | **Tip** | `'tip'` | `<Lightbulb />` | Mindful focus advice, daily productivity reflections, and inspiration. |
 | **5** | **Support** | `'support'` | `<Heart />` | Project appreciation, creator support links, and feedback channels. |

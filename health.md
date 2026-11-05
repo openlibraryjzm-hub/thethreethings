@@ -22,6 +22,8 @@ Unlike traditional habit trackers, this screen is intentionally **untracked**. I
    - **Morning & Evening:** Displays all 4 foundational care rituals (**Toothbrush**, **Mouth Wash**, **Glass of Water**, **Tooth Floss**).
    - **Afternoon:** Gracefully collapses to the 2 midday essentials (**Toothbrush**, **Glass of Water**).
 4. **Balanced Responsive Composition:**
+   - On mobile, anchors cleanly to the top (`justify-start`) with compact card padding and scaled vector illustrations to prevent negative scroll clipping.
+   - On desktop, centers comfortably vertically (`md:justify-center`).
    - Morning/Evening automatically expands into a 4-card grid (`grid-cols-2 md:grid-cols-4`).
    - Afternoon collapses into a centered, spacious 2-card layout (`max-w-xl grid-cols-1 sm:grid-cols-2`).
 5. **Warm Stationery Visual Integrity:**
@@ -61,8 +63,8 @@ const determineTimeOfDay = (): TimeOfDay => {
 };
 ```
 
-### 2. Autonomous Background Polling
-A lightweight 60-second `setInterval` polls `determineTimeOfDay()`. If the user leaves the application open across a day-phase boundary (e.g., crossing from 11:59 AM into 12:00 PM), the layout transitions smoothly in real time without a page reload.
+### 2. Autonomous Background Polling & Mobile Lifecycle Sync
+A lightweight 30-second timer polls `determineTimeOfDay()`. In addition, native DOM `visibilitychange` and window `focus` event listeners guarantee that whenever a user unlocks their phone or switches back to the app from the background, the phase of the day and visible care items immediately synchronize with the device's clock.
 
 ### 3. Greeting Representation
 

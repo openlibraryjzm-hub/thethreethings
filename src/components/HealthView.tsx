@@ -66,12 +66,30 @@ export const HealthView: React.FC = () => {
   // Untracked session checks (purely for the moment)
   const [checkedIds, setCheckedIds] = useState<Record<string, boolean>>({});
 
-  // Automatically update time of day periodically
+  // Automatically update time of day periodically and on app resume/focus
   useEffect(() => {
-    const timer = setInterval(() => {
+    const updateTime = () => {
       setTimeOfDay(determineTimeOfDay());
-    }, 60000);
-    return () => clearInterval(timer);
+    };
+
+    // Check periodically
+    const timer = setInterval(updateTime, 30000);
+
+    // Update immediately when user unlocks phone or switches back to app
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateTime();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', updateTime);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', updateTime);
+    };
   }, []);
 
   // Filter items based on time of day rule:
@@ -133,25 +151,25 @@ export const HealthView: React.FC = () => {
   const allVisibleDone = visibleItems.length > 0 && visibleItems.every((item) => checkedIds[item.id]);
 
   return (
-    <main className="flex-1 min-h-0 px-8 py-8 max-w-5xl w-full mx-auto overflow-y-auto custom-scrollbar select-none flex flex-col justify-center">
+    <main className="flex-1 min-h-0 px-4 md:px-8 py-4 md:py-8 max-w-5xl w-full mx-auto overflow-y-auto custom-scrollbar select-none flex flex-col justify-start md:justify-center">
       {/* Top Greeting Header */}
-      <div className="flex flex-col items-center text-center mb-8">
+      <div className="flex flex-col items-center text-center mb-5 md:mb-8 shrink-0">
         {/* Big Simple Greeting */}
         <motion.div
           key={greeting}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="flex items-center justify-center gap-3"
+          className="flex items-center justify-center gap-2.5 md:gap-3"
         >
           {greetingIcon}
-          <h1 className="text-4xl md:text-5xl font-serif-accent italic font-bold text-[#2D2A26] tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-serif-accent italic font-bold text-[#2D2A26] tracking-tight">
             {greeting}
           </h1>
         </motion.div>
 
         {/* Gentle, untracked philosophy subtitle */}
-        <p className="text-xs text-[#78716A] mt-2 font-medium">
+        <p className="text-[11px] md:text-xs text-[#78716A] mt-1 md:mt-2 font-medium">
           A gentle reminder for right now · Nothing to catch up on
         </p>
       </div>
@@ -160,8 +178,8 @@ export const HealthView: React.FC = () => {
       <div
         className={`w-full mx-auto transition-all duration-500 ${
           visibleItems.length === 2
-            ? 'max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-6'
-            : 'max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-6'
+            ? 'max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6'
+            : 'max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6'
         }`}
       >
         <AnimatePresence mode="popLayout">
@@ -177,14 +195,14 @@ export const HealthView: React.FC = () => {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.35 }}
                 onClick={() => handleToggleItem(item.id)}
-                className={`group relative rounded-3xl p-6 border transition-all duration-300 flex flex-col items-center justify-between cursor-pointer select-none ${
+                className={`group relative rounded-2xl md:rounded-3xl p-3.5 md:p-6 border transition-all duration-300 flex flex-col items-center justify-between cursor-pointer select-none ${
                   isChecked
                     ? 'bg-gradient-to-b from-[#F0F4F1] to-white border-[#6E8B74]/50 shadow-xs'
                     : 'bg-white hover:bg-[#FAF7F2]/60 border-[#E6DFD5] hover:border-[#DA7756]/40 hover:shadow-xs'
                 }`}
               >
                 {/* Top Subtle Status Badge */}
-                <div className="w-full flex items-center justify-end mb-2">
+                <div className="w-full flex items-center justify-end mb-1 md:mb-2">
                   <span
                     className={`p-1 rounded-full transition-colors ${
                       isChecked
@@ -192,12 +210,12 @@ export const HealthView: React.FC = () => {
                         : 'bg-[#FAF7F2] text-[#D0C6B8] group-hover:text-[#DA7756]'
                     }`}
                   >
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   </span>
                 </div>
 
                 {/* Tactile Vector SVG Graphic */}
-                <div className="relative w-28 h-36 my-2 flex items-center justify-center">
+                <div className="relative w-20 h-28 sm:w-28 sm:h-36 my-1 md:my-2 flex items-center justify-center">
                   {/* Floating sparkles when checked */}
                   {isChecked && (
                     <motion.div
@@ -490,7 +508,7 @@ export const HealthView: React.FC = () => {
       </div>
 
       {/* Subtle Bottom Controls */}
-      <div className="flex items-center justify-center gap-3 mt-8 text-xs text-[#78716A]">
+      <div className="flex items-center justify-center gap-3 mt-4 md:mt-8 mb-2 text-xs text-[#78716A] shrink-0">
         {allVisibleDone ? (
           <span className="font-semibold text-[#6E8B74] flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-[#6E8B74]" />
