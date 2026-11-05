@@ -12,6 +12,10 @@ node_modules/
 dist/
 dist-ssr/
 *.local
+*.apk
+android/app/build/
+android/.gradle/
+android/local.properties
 
 # Tauri build & rust outputs
 src-tauri/target/

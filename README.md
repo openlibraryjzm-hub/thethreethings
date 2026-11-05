@@ -78,6 +78,7 @@ the-three-things/
 ├── navbar.md                  # Dedicated context guide for the Header & Navigation bar
 ├── health.md                  # Dedicated context guide for the Health tab
 ├── media.md                   # Dedicated context guide for the Media tab
+├── build.md                   # Dedicated guide for Android APK builds & device deployment
 └── README.md                  # This file
 ```
 
@@ -146,6 +147,7 @@ For detailed functional specifications and component mechanics, refer to the ded
 | `npm run tauri dev` | Launch the app inside the native Tauri desktop window in dev mode |
 | `npm run build` | Run TypeScript type checks (`tsc`) & production build (`vite build`) |
 | `npm run preview` | Preview production build locally |
+| `npm run build:android` | Build the Android APK (`TheThreeThings.apk`) |
 
 ---
 
