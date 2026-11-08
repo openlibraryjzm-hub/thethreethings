@@ -17,7 +17,7 @@ Rather than crowding the interface with heavy menus or permanently expanded labe
 ```
 src/
 ├── types/
-│   └── index.ts               # ActiveView ('focus' | 'completed' | 'media' | 'health' | 'tip' | 'support')
+│   └── index.ts               # ActiveView ('focus' | 'completed' | 'painpoints' | 'media' | 'health' | 'tip' | 'settings')
 ├── components/
 │   ├── Header.tsx             # Fixed top bar with brand mark, motto pill, and segmented navigation
 │   └── CompletedView.tsx      # Archive view accessed via Focus view subheader (decoupled from navbar)
@@ -29,7 +29,7 @@ src/
 Defined in [`src/types/index.ts`](file:///c:/Users/GGPC/Desktop/todaysthree/src/types/index.ts):
 
 ```typescript
-export type ActiveView = 'focus' | 'completed' | 'painpoints' | 'health' | 'tip' | 'support' | 'media';
+export type ActiveView = 'focus' | 'completed' | 'painpoints' | 'health' | 'tip' | 'settings' | 'support' | 'media';
 ```
 
 ### 2. Header Component Interface
@@ -57,7 +57,7 @@ The navigation bar presents 6 core spaces in fixed left-to-right order:
 | **3** | **Media** | `'media'` | `<Film />` | 4-card media tracker queue, monthly editorial theme, and artwork curation. |
 | **4** | **Health** | `'health'` | `<Apple />` | Untracked, time-aware daily self-care rituals (morning/afternoon/evening). |
 | **5** | **Tip** | `'tip'` | `<Lightbulb />` | Mindful focus advice, daily productivity reflections, and inspiration. |
-| **6** | **Support** | `'support'` | `<Heart />` | Project appreciation, creator support links, and feedback channels. |
+| **6** | **Settings** | `'settings'` | `<Settings />` | Focus reminder cadence, on-device notification controls, local backup/import, and project appreciation. |
 
 ---
 

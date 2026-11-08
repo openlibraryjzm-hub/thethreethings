@@ -65,8 +65,12 @@ the-three-things/
 │   │   ├── CompletedView.tsx  # Completed history page with filtering and 50/page pagination
 │   │   ├── PainPointsView.tsx # Physics-based stone cairn stack for persistent life pain points
 │   │   ├── HealthView.tsx     # Health screen with dynamic time greeting & untracked care reminders
+│   │   ├── TipView.tsx        # Mindful focus tips and guidance
+│   │   └── SettingsView.tsx   # Settings screen with focus reminder cadences & backup
 │   ├── utils/
-│   │   └── sound.ts           # Web Audio API harmonic chime & tactile stamp sound effect
+│   │   ├── sound.ts           # Web Audio API harmonic chime & tactile stamp sound effect
+│   │   ├── confetti.ts        # Celebration confetti with warm color tokens
+│   │   └── notifications.ts   # On-device Capacitor local notification queue & channel
 │   ├── types/
 │   │   └── index.ts           # TypeScript definitions for Goal, AppState, and ActiveView
 │   ├── styles/
@@ -78,6 +82,7 @@ the-three-things/
 ├── navbar.md                  # Dedicated context guide for the Header & Navigation bar
 ├── health.md                  # Dedicated context guide for the Health tab
 ├── painpoint.md               # Dedicated context guide for the Pain Points tab
+├── notification.md            # Dedicated context guide for Focus Notifications & Cadence
 ├── build.md                   # Dedicated guide for Android APK builds & device deployment
 └── README.md                  # This file
 ```
@@ -89,7 +94,7 @@ the-three-things/
 Defined in [`src/types/index.ts`](file:///c:/Users/GGPC/Desktop/todaysthree/src/types/index.ts):
 
 ```typescript
-export type ActiveView = 'focus' | 'completed' | 'media' | 'health' | 'tip' | 'support';
+export type ActiveView = 'focus' | 'completed' | 'painpoints' | 'health' | 'tip' | 'settings' | 'support' | 'media';
 
 export interface Goal {
   id: string;          // Unique ID (e.g. 'goal-1' on focus screen, or timestamped ID in history)
@@ -103,6 +108,18 @@ export interface AppState {
   completedHistory: Goal[];  // Log of all completed goals over time
   totalCompletedCount: number;// Running tally of completed goals
 }
+
+export type ReminderFrequency = '15m' | '30m' | '45m' | '1h' | 'custom';
+
+export interface NotificationSettings {
+  enabled: boolean;
+  frequency: ReminderFrequency;
+  customMinutes?: number;
+}
+
+export interface AppSettings {
+  notifications: NotificationSettings;
+}
 ```
 
 ---
@@ -113,8 +130,13 @@ For detailed functional specifications and component mechanics, refer to the ded
 
 - 🧭 **[Navigation Bar Specification](navbar.md)**
   - Adaptive active label vs. inactive icon-only tab interaction
-  - 6-space hierarchy: Focus, Pain Points, Media, Health, Tip, Support
+  - 6-space hierarchy: Focus, Pain Points, Media, Health, Tip, Settings
   - Decoupling of completed history access to preserve 3-card grid isolation
+- 🔔 **[Notification System Specification](notification.md)**
+  - Quiet on-device focus reminder philosophy and serverless architecture
+  - Native Capacitor local notifications, high-importance Android channel, and Doze-mode execution
+  - Rolling queue algorithm (40 future alarms) and rotating mindful prompt pool
+  - Settings UI: master permission toggle, 5-stop cadence slider (15m, 30m, 45m, 1h, Custom)
 - 🎯 **[Focus View Specification](docs/FOCUS_VIEW.md)**
   - Fixed 3-card layout rules
   - Sub-goal separation (`//`), multi-selection, and partial completion mechanics

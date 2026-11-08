@@ -29,6 +29,16 @@ function getAudioContext(): AudioContext | null {
  */
 export function playCompletionSound() {
   try {
+    const raw = localStorage.getItem('the_three_things_settings');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.soundEnabled === false) return;
+    }
+  } catch {
+    // ignore parse error and proceed
+  }
+
+  try {
     const ctx = getAudioContext();
     if (!ctx) return;
 

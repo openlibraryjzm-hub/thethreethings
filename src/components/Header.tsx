@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Rows3, Mountain, Film, Apple, Lightbulb, Heart } from 'lucide-react';
+import { Target, Rows3, Mountain, Film, Apple, Lightbulb, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActiveView } from '../types';
 
@@ -21,7 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'media', label: 'Media', icon: Film },
   { id: 'health', label: 'Health', icon: Apple },
   { id: 'tip', label: 'Tip', icon: Lightbulb },
-  { id: 'support', label: 'Support', icon: Heart },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export const Header: React.FC<HeaderProps> = ({

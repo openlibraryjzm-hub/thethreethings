@@ -1,4 +1,16 @@
-export type ActiveView = 'focus' | 'completed' | 'painpoints' | 'health' | 'tip' | 'support' | 'media';
+export type ActiveView = 'focus' | 'completed' | 'painpoints' | 'health' | 'tip' | 'settings' | 'support' | 'media';
+
+export type ReminderFrequency = '15m' | '30m' | '45m' | '1h' | 'custom';
+
+export interface NotificationSettings {
+  enabled: boolean;
+  frequency: ReminderFrequency;
+  customMinutes?: number;
+}
+
+export interface AppSettings {
+  notifications: NotificationSettings;
+}
 
 export type DayKey = 'Sa' | 'Su' | 'Mo' | 'Tu' | 'We' | 'Th' | 'Fr';
 

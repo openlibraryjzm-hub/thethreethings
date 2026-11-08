@@ -8,7 +8,8 @@ import { PainPointsView } from './components/PainPointsView';
 import { MediaView } from './components/MediaView';
 import { HealthView } from './components/HealthView';
 import { TipView } from './components/TipView';
-import { SupportView } from './components/SupportView';
+import { SettingsView, getStoredSettings } from './components/SettingsView';
+import { syncScheduledReminders } from './utils/notifications';
 
 const STORAGE_KEY = 'the_three_things_app_state_v3';
 
@@ -76,6 +77,14 @@ export const App: React.FC = () => {
       console.error('Failed to save state to localStorage', e);
     }
   }, [state]);
+
+  // Sync scheduled notifications on startup
+  useEffect(() => {
+    const currentSettings = getStoredSettings();
+    if (currentSettings.notifications.enabled) {
+      syncScheduledReminders(currentSettings.notifications);
+    }
+  }, []);
 
   const handleUpdateGoal = (id: string, updates: Partial<Goal>) => {
     setState((prev) => ({
@@ -238,8 +247,8 @@ export const App: React.FC = () => {
         /* Tip Placeholder Screen */
         <TipView />
       ) : (
-        /* Support Placeholder Screen */
-        <SupportView />
+        /* Settings Screen */
+        <SettingsView />
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Goal } from '../types';
 import { Trash2, RotateCcw, Plus, Sparkles, Pencil, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
-import confetti from 'canvas-confetti';
+import { fireCelebrationConfetti } from '../utils/confetti';
 import { SlideToComplete } from './SlideToComplete';
 import { playCompletionSound } from '../utils/sound';
 import { parseSubGoals } from '../utils/subGoals';
@@ -82,13 +82,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
     playCompletionSound();
 
     // Trigger celebration confetti with warm tones
-    confetti({
-      particleCount: 50,
-      spread: 65,
-      origin: { y: 0.6 },
-      colors: ['#DA7756', '#6E8B74', '#F5F0E8', '#C86446'],
-      disableForReducedMotion: true,
-    });
+    fireCelebrationConfetti();
 
     if (hasSubGoals) {
       if (selectedIndices.length > 0) {
