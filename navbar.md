@@ -48,21 +48,22 @@ interface HeaderProps {
 
 ## 🧭 Navigation Catalog & Tab Order
 
-The navigation bar presents 5 core spaces in fixed left-to-right order:
+The navigation bar presents 6 core spaces in fixed left-to-right order:
 
 | Index | Space | View ID | Icon Component | Semantics & Purpose |
 | :---: | :--- | :--- | :--- | :--- |
 | **1** | **Focus** | `'focus'` | `<Rows3 />` | Primary desk-pad with exactly 3 daily goal cards (`01`, `02`, `03`). |
 | **2** | **Pain Points** | `'painpoints'` | `<Mountain />` | Confined friction word cloud reservoir feeding into the 3 daily Focus goals. |
-| **3** | **Health** | `'health'` | `<Apple />` | Untracked, time-aware daily self-care rituals (morning/afternoon/evening). |
-| **4** | **Tip** | `'tip'` | `<Lightbulb />` | Mindful focus advice, daily productivity reflections, and inspiration. |
-| **5** | **Support** | `'support'` | `<Heart />` | Project appreciation, creator support links, and feedback channels. |
+| **3** | **Media** | `'media'` | `<Film />` | 4-card media tracker queue, monthly editorial theme, and artwork curation. |
+| **4** | **Health** | `'health'` | `<Apple />` | Untracked, time-aware daily self-care rituals (morning/afternoon/evening). |
+| **5** | **Tip** | `'tip'` | `<Lightbulb />` | Mindful focus advice, daily productivity reflections, and inspiration. |
+| **6** | **Support** | `'support'` | `<Heart />` | Project appreciation, creator support links, and feedback channels. |
 
 ---
 
 ## ⚡ Active vs. Inactive Adaptive Label Interaction
 
-To prevent visual clutter across 5 tabs, the navigation bar implements an adaptive pill interaction pattern:
+To prevent visual clutter across 6 tabs, the navigation bar implements an adaptive pill interaction pattern:
 
 ### 1. Active Tab State
 - **Visuals:** Pure white elevated background (`bg-white text-[#2D2A26] shadow-xs px-3.5 py-1.5`).
@@ -111,7 +112,7 @@ The **Completed View** (`'completed'`) is intentionally **not** present in the t
      ```
    - This ensures the Focus screen always contains exactly 3 card children—rendering 3 horizontal cards on desktop and 3 vertically stacked cards on mobile without grid pollution.
 2. **Neutral Header State:**
-   - When viewing `'completed'`, none of the 5 top-level header tabs are highlighted (`activeView !== tab.id`). All 5 tabs remain in their quiet icon-only mode.
+   - When viewing `'completed'`, none of the 6 top-level header tabs are highlighted (`activeView !== tab.id`). All 6 tabs remain in their quiet icon-only mode.
    - Returning to the Focus view is supported through the `"← Back to Focus"` action inside [`CompletedView.tsx`](file:///c:/Users/GGPC/Desktop/todaysthree/src/components/CompletedView.tsx) or by clicking the Focus icon in the top header.
 
 ---
@@ -131,10 +132,10 @@ The **Completed View** (`'completed'`) is intentionally **not** present in the t
 ## 📱 Responsive Layout Rules
 
 - **Header Padding:** `px-4 md:px-8 py-3.5 md:py-4`
-  - Mobile devices use tighter `px-4` padding to keep the brand mark and 5 tabs comfortably on one line without horizontal overflow.
+  - Mobile devices use tighter `px-4` padding to keep the brand mark and 6 tabs comfortably on one line without horizontal overflow.
   - Desktop uses generous `px-8` padding for an airy editorial feel.
 - **Brand Subtitle Suppression:** `hidden sm:inline-flex`
-  - The *"One day at a time"* badge automatically collapses on viewports smaller than 640px, giving full priority to the brand title and the 5 navigation tabs.
+  - The *"One day at a time"* badge automatically collapses on viewports smaller than 640px, giving full priority to the brand title and the 6 navigation tabs.
 
 ---
 

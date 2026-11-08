@@ -1,32 +1,94 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Upload, Trash2, RefreshCw, Plus, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Upload,
+  Trash2,
+  RefreshCw,
+  Plus,
+  Sparkles,
+  Calendar,
+  Layers,
+  ArrowLeft,
+  CheckCircle2,
+  Check,
+  History,
+  RotateCcw,
+  Pencil,
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { SlideToComplete } from './SlideToComplete';
 import { playCompletionSound } from '../utils/sound';
+import { WeeklyMediaCard, WeeklyMediaSlot, DayKey } from '../types';
 
-export interface MediaCardItem {
-  id: string;
-  indexLabel: string;
-  mediaTitle: string; // Title of the media (e.g. Severance, Dune)
-  title: string;      // Goal related to the media (e.g. Watch 1 episode, beat xyz level)
-  isCompleted: boolean;
-  imageUrl?: string;
-  count?: number;
-  cap?: string;
+const STORAGE_KEY = 'the_three_things_weekly_media_v2';
+const LEGACY_CARDS_STORAGE_KEY = 'the_three_things_media_cards_v1';
+const LEGACY_THEME_STORAGE_KEY = 'the_three_things_monthly_theme_v1';
+
+export const WEEK_DAYS: DayKey[] = ['Sa', 'Su', 'Mo', 'Tu', 'We', 'Th', 'Fr'];
+
+// Helper to compute Saturday–Friday week details and formatted date range
+// Saturday + Sunday (first 2 weekend days) -> Monday–Friday (remaining 5 days)
+export function getWeekDetails(targetDate: Date = new Date()) {
+  const d = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+  const day = d.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+
+  // Saturday starts the week:
+  // Sat (6) -> 0
+  // Sun (0) -> -1
+  // Mon (1) -> -2 ... Fri (5) -> -6
+  const diffToSaturday = -((day + 1) % 7);
+
+  const saturday = new Date(d);
+  saturday.setDate(d.getDate() + diffToSaturday);
+  saturday.setHours(0, 0, 0, 0);
+
+  const friday = new Date(saturday);
+  friday.setDate(saturday.getDate() + 6);
+  friday.setHours(23, 59, 59, 999);
+
+  const m1 = saturday.toLocaleDateString('en-US', { month: 'short' });
+  const m2 = friday.toLocaleDateString('en-US', { month: 'short' });
+  const d1 = saturday.getDate();
+  const d2 = friday.getDate();
+  const y1 = saturday.getFullYear();
+  const y2 = friday.getFullYear();
+
+  let dateLabel = '';
+  if (y1 === y2) {
+    if (m1 === m2) {
+      dateLabel = `${m1} ${d1} – ${d2}, ${y1}`;
+    } else {
+      dateLabel = `${m1} ${d1} – ${m2} ${d2}, ${y1}`;
+    }
+  } else {
+    dateLabel = `${m1} ${d1}, ${y1} – ${m2} ${d2}, ${y2}`;
+  }
+
+  // Consistent, collision-free date ID: 'week-YYYY-MM-DD' based on Saturday start
+  const id = `week-${y1}-${String(saturday.getMonth() + 1).padStart(2, '0')}-${String(d1).padStart(2, '0')}`;
+
+  const firstJan = new Date(y1, 0, 1);
+  const weekNumber = Math.max(1, Math.ceil(((saturday.getTime() - firstJan.getTime()) / 86400000 + 1) / 7));
+
+  return {
+    id,
+    year: y1,
+    weekNumber,
+    startDate: saturday.toISOString(),
+    endDate: friday.toISOString(),
+    dateLabel,
+  };
 }
 
-const STORAGE_KEY = 'the_three_things_media_cards_v1';
-const THEME_STORAGE_KEY = 'the_three_things_monthly_theme_v1';
+export function createDefaultSlots(count: number = 6): WeeklyMediaSlot[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `slot-${Date.now()}-${i + 1}-${Math.random().toString(36).slice(2, 6)}`,
+    title: '',
+    activeDays: [],
+    imageUrl: '',
+  }));
+}
 
-const initialCards: MediaCardItem[] = [
-  { id: 'media-card-1', indexLabel: '01', mediaTitle: '', title: '', isCompleted: false, imageUrl: '' },
-  { id: 'media-card-2', indexLabel: '02', mediaTitle: '', title: '', isCompleted: false, imageUrl: '' },
-  { id: 'media-card-3', indexLabel: '03', mediaTitle: '', title: '', isCompleted: false, imageUrl: '' },
-  { id: 'media-card-4', indexLabel: '04', mediaTitle: '', title: '', isCompleted: false, imageUrl: '' },
-];
-
-// Helper to compress and convert images to lightweight base64 for persistent localStorage
+// Client-side canvas compression to store optimized JPEG in localStorage
 const compressAndReadImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -35,7 +97,7 @@ const compressAndReadImage = (file: File): Promise<string> => {
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let { width, height } = img;
-        const MAX_DIM = 1000;
+        const MAX_DIM = 960;
 
         if (width > MAX_DIM || height > MAX_DIM) {
           if (width > height) {
@@ -56,7 +118,6 @@ const compressAndReadImage = (file: File): Promise<string> => {
         }
 
         ctx.drawImage(img, 0, 0, width, height);
-        // Save as optimized JPEG
         const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
         resolve(dataUrl);
       };
@@ -68,384 +129,464 @@ const compressAndReadImage = (file: File): Promise<string> => {
   });
 };
 
-export const MediaView: React.FC = () => {
-  const currentMonthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date());
+type ViewMode = 'current' | 'all-weeks' | 'archived';
 
-  // 4 Permanent Media Cards State
-  const [cards, setCards] = useState<MediaCardItem[]>(() => {
+export const MediaView: React.FC = () => {
+  const currentWeekMeta = useMemo(() => getWeekDetails(new Date()), []);
+  const [viewMode, setViewMode] = useState<ViewMode>('current');
+  const [selectedWeekId, setSelectedWeekId] = useState<string>(currentWeekMeta.id);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+
+  // All Weeks State
+  const [weeks, setWeeks] = useState<WeeklyMediaCard[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length === 4) {
-          return parsed.map((card, idx) => ({
-            id: card.id || `media-card-${idx + 1}`,
-            indexLabel: card.indexLabel || `0${idx + 1}`,
-            mediaTitle: card.mediaTitle !== undefined ? card.mediaTitle : (card.title || ''),
-            title: card.mediaTitle !== undefined ? (card.title || '') : '',
-            isCompleted: Boolean(card.isCompleted),
-            imageUrl: card.imageUrl || '',
-          }));
+        const parsed: WeeklyMediaCard[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Verify current week exists; if missing, auto-create it at front
+          const hasCurrent = parsed.some((w) => w.id === currentWeekMeta.id);
+          if (!hasCurrent) {
+            const newCurrentWeek: WeeklyMediaCard = {
+              ...currentWeekMeta,
+              theme: '',
+              slots: createDefaultSlots(6),
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            };
+            return [newCurrentWeek, ...parsed];
+          }
+          return parsed;
         }
       }
-    } catch (e) {
-      console.error('Failed to load media cards from localStorage', e);
-    }
-    return initialCards;
-  });
 
-  // Monthly Theme State (Single title string)
-  const [monthlyTheme, setMonthlyTheme] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY);
-      if (saved) {
-        if (saved.startsWith('{')) {
-          const parsed = JSON.parse(saved);
-          return parsed.theme || '';
+      // Check legacy v1 data for graceful migration
+      const legacySaved = localStorage.getItem(LEGACY_CARDS_STORAGE_KEY);
+      const legacyTheme = localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
+      let initialSlots = createDefaultSlots(6);
+      let initialTheme = '';
+
+      if (legacySaved) {
+        try {
+          const parsedLegacy = JSON.parse(legacySaved);
+          if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
+            initialSlots = parsedLegacy.map((c, idx) => ({
+              id: c.id || `slot-${idx + 1}`,
+              title: c.mediaTitle || c.title || '',
+              goal: c.mediaTitle ? (c.title || '') : '',
+              isCompleted: Boolean(c.isCompleted),
+              imageUrl: c.imageUrl || '',
+            }));
+            while (initialSlots.length < 6) {
+              initialSlots.push({
+                id: `slot-${Date.now()}-${initialSlots.length + 1}`,
+                title: '',
+                goal: '',
+                isCompleted: false,
+                imageUrl: '',
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Failed migrating legacy cards', e);
         }
-        return saved;
       }
+
+      if (legacyTheme) {
+        try {
+          if (legacyTheme.startsWith('{')) {
+            initialTheme = JSON.parse(legacyTheme).theme || '';
+          } else {
+            initialTheme = legacyTheme;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      return [
+        {
+          ...currentWeekMeta,
+          theme: initialTheme,
+          slots: initialSlots,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      ];
     } catch (e) {
-      console.error('Failed to load monthly theme from localStorage', e);
+      console.error('Failed to load weekly media cards', e);
+      return [
+        {
+          ...currentWeekMeta,
+          theme: '',
+          slots: createDefaultSlots(6),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      ];
     }
-    return '';
   });
 
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const themeInputRef = useRef<HTMLInputElement | null>(null);
+  const [isThemeFocused, setIsThemeFocused] = useState(false);
 
+  // Persist weeks
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(weeks));
     } catch (e) {
-      console.error('Failed to save media cards to localStorage', e);
+      console.error('Failed to save weekly media cards to localStorage', e);
     }
-  }, [cards]);
+  }, [weeks]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify({ theme: monthlyTheme }));
-    } catch (e) {
-      console.error('Failed to save monthly theme to localStorage', e);
+  // Current active week card
+  const currentWeek = useMemo(() => {
+    return weeks.find((w) => w.id === currentWeekMeta.id) || weeks[0];
+  }, [weeks, currentWeekMeta.id]);
+
+  // The week currently being rendered in full view
+  const activeDisplayedWeek = useMemo(() => {
+    if (viewMode === 'archived' && selectedWeekId) {
+      return weeks.find((w) => w.id === selectedWeekId) || currentWeek;
     }
-  }, [monthlyTheme]);
+    return currentWeek;
+  }, [viewMode, selectedWeekId, weeks, currentWeek]);
 
-  const handleUpdateCard = (id: string, updates: Partial<MediaCardItem>) => {
-    setCards((prev) =>
-      prev.map((card) => (card.id === id ? { ...card, ...updates } : card))
+  // Update a specific week
+  const handleUpdateWeek = (weekId: string, updates: Partial<WeeklyMediaCard>) => {
+    setWeeks((prev) =>
+      prev.map((w) => (w.id === weekId ? { ...w, ...updates, updatedAt: Date.now() } : w))
     );
   };
 
-  const handleClearCard = (id: string) => {
-    setCards((prev) =>
-      prev.map((card) =>
-        card.id === id
-          ? { ...card, mediaTitle: '', title: '', isCompleted: false, imageUrl: '' }
-          : card
-      )
+  // Update a specific slot inside a week
+  const handleUpdateSlot = (weekId: string, slotId: string, updates: Partial<WeeklyMediaSlot>) => {
+    setWeeks((prev) =>
+      prev.map((w) => {
+        if (w.id !== weekId) return w;
+        return {
+          ...w,
+          updatedAt: Date.now(),
+          slots: w.slots.map((s) => (s.id === slotId ? { ...s, ...updates } : s)),
+        };
+      })
     );
   };
 
-  // "New Goal": clears specific goal and completes state, but retains mediaTitle & right half artwork
-  const handleNewGoal = (id: string) => {
-    setCards((prev) =>
-      prev.map((card) =>
-        card.id === id
-          ? { ...card, title: '', isCompleted: false }
-          : card
-      )
-    );
-  };
-
-  const handleComplete = (id: string) => {
-    // Play tactile acoustic celebratory sound
-    playCompletionSound();
-
-    // Trigger celebratory confetti in warm brand palette
-    confetti({
-      particleCount: 50,
-      spread: 65,
-      origin: { y: 0.6 },
-      colors: ['#DA7756', '#6E8B74', '#F5F0E8', '#C86446'],
-      disableForReducedMotion: true,
+  // Clear slot content
+  const handleClearSlot = (weekId: string, slotId: string) => {
+    handleUpdateSlot(weekId, slotId, {
+      title: '',
+      activeDays: [],
+      imageUrl: '',
+      completedAt: undefined,
     });
-
-    handleUpdateCard(id, { isCompleted: true });
   };
 
-  const handleImageUpload = async (id: string, file: File) => {
+  // Toggle a day button (Sa, Su, Mo, Tu, We, Th, Fr)
+  const handleToggleDay = (weekId: string, slotId: string, day: DayKey) => {
+    setWeeks((prev) =>
+      prev.map((w) => {
+        if (w.id !== weekId) return w;
+        return {
+          ...w,
+          updatedAt: Date.now(),
+          slots: w.slots.map((s) => {
+            if (s.id !== slotId) return s;
+            const currentDays = s.activeDays || [];
+            const exists = currentDays.includes(day);
+            const nextDays = exists
+              ? currentDays.filter((d) => d !== day)
+              : [...currentDays, day];
+
+            if (!exists) {
+              playCompletionSound();
+              if (nextDays.length === 7) {
+                confetti({
+                  particleCount: 50,
+                  spread: 60,
+                  origin: { y: 0.6 },
+                  colors: ['#DA7756', '#6E8B74', '#F5F0E8', '#C86446'],
+                  disableForReducedMotion: true,
+                });
+              }
+            }
+
+            return {
+              ...s,
+              activeDays: nextDays,
+              isCompleted: nextDays.length > 0,
+              completedAt: nextDays.length > 0 ? (s.completedAt || Date.now()) : undefined,
+            };
+          }),
+        };
+      })
+    );
+  };
+
+  // Add a new rectangular slot to a week
+  const handleAddSlot = (weekId: string) => {
+    const newSlot: WeeklyMediaSlot = {
+      id: `slot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      title: '',
+      activeDays: [],
+      imageUrl: '',
+    };
+    setWeeks((prev) =>
+      prev.map((w) => (w.id === weekId ? { ...w, slots: [...w.slots, newSlot], updatedAt: Date.now() } : w))
+    );
+  };
+
+  // Remove a slot from a week (if more than 1)
+  const handleRemoveSlot = (weekId: string, slotId: string) => {
+    setWeeks((prev) =>
+      prev.map((w) => {
+        if (w.id !== weekId || w.slots.length <= 1) return w;
+        return {
+          ...w,
+          slots: w.slots.filter((s) => s.id !== slotId),
+          updatedAt: Date.now(),
+        };
+      })
+    );
+  };
+
+  // Image handling
+  const handleImageUpload = async (weekId: string, slotId: string, file: File) => {
     if (!file.type.startsWith('image/')) return;
     try {
-      const compressedDataUrl = await compressAndReadImage(file);
-      handleUpdateCard(id, { imageUrl: compressedDataUrl });
+      const compressed = await compressAndReadImage(file);
+      handleUpdateSlot(weekId, slotId, { imageUrl: compressed });
     } catch (err) {
-      console.error('Failed to process image', err);
+      console.error('Failed to process artwork', err);
     }
   };
 
-  const handleFileChange = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(id, file);
-    }
-    e.target.value = '';
-  };
+  // Calculate completion stats for active displayed week
+  const totalDaysLogged = useMemo(() => {
+    return activeDisplayedWeek.slots.reduce((sum, s) => sum + (s.activeDays?.length || 0), 0);
+  }, [activeDisplayedWeek]);
 
-  const handleDrop = (id: string, e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      handleImageUpload(id, file);
-    }
-  };
+  const activeMediaCount = useMemo(() => {
+    return activeDisplayedWeek.slots.filter((s) => (s.activeDays?.length || 0) > 0).length;
+  }, [activeDisplayedWeek]);
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
+  // Render the Large Weekly Card
+  const renderLargeCard = (week: WeeklyMediaCard, isArchiveView: boolean) => {
+    // Helper to test if a slot has content
+    const isSlotFilled = (slot: WeeklyMediaSlot) => {
+      return Boolean(
+        slot.title.trim() ||
+        slot.imageUrl ||
+        (slot.activeDays && slot.activeDays.length > 0)
+      );
+    };
 
-  return (
-    <main className="flex-1 min-h-0 px-8 py-6 max-w-5xl w-full mx-auto overflow-y-auto custom-scrollbar select-none">
-      {/* Header Info */}
-      <div className="flex items-center justify-between mb-4 px-2">
-        <p className="text-xs uppercase tracking-widest text-[#78716A] font-semibold">
-          Media Log
-        </p>
-        <span className="text-xs text-[#78716A]/70 font-medium italic">
-          Curation, artwork & completions
-        </span>
-      </div>
+    const filledSlots = week.slots.filter(isSlotFilled);
+    // View mode: shows only filled cards. Edit mode: shows filled + empty cards ready to fill.
+    const slotsToDisplay = isEditMode ? week.slots : filledSlots;
 
-      <div className="flex flex-col gap-5 pb-12">
-        {/* 🌟 DISTINCT MONTHLY THEME CARD */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="w-full h-[270px] md:h-[285px] rounded-3xl p-6 md:p-7 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden border border-[#E2D8CC] bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE6]"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch h-full">
-            {/* LEFT HALF */}
-            <div className="flex flex-col justify-between h-full pr-0 md:pr-4 overflow-hidden">
-              {/* Header: Month anchor & Clear */}
-              <div className="flex items-center justify-between shrink-0">
-                <span className="text-3xl md:text-4xl font-serif-accent font-bold text-[#DA7756] italic select-none">
-                  {currentMonthName}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setMonthlyTheme('')}
-                  className="p-1.5 text-[#78716A]/50 hover:text-[#DA7756] hover:bg-white/80 rounded-xl transition-colors cursor-pointer"
-                  title="Clear theme title"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Center: Sole Large Bold Charcoal Text Area (2-line wrap) */}
-              <div className="my-auto py-1">
-                <textarea
-                  rows={2}
-                  value={monthlyTheme}
-                  onChange={(e) => setMonthlyTheme(e.target.value)}
-                  placeholder="What is this month's media theme?"
-                  className="w-full text-xl md:text-2xl font-bold text-[#2D2A26] placeholder-[#78716A]/35 bg-transparent border-none outline-none focus:ring-0 transition-colors tracking-tight leading-snug resize-none overflow-hidden"
+    return (
+      <motion.div
+        key={week.id}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.28, ease: 'easeOut' }}
+        className="w-full rounded-3xl p-6 md:p-8 bg-white border border-[#E6DFD5] shadow-xs hover:shadow-sm transition-all duration-300"
+      >
+        {/* Card Header: Theme prompt on left, Date & All Weeks on right */}
+        <div className="flex flex-col-reverse md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#E6DFD5]">
+          {/* Left: Borderless Large Weekly Focus / Theme with Blinking Cursor */}
+          <div
+            onClick={() => themeInputRef.current?.focus()}
+            className="relative flex items-center flex-1 min-w-0 max-w-xl cursor-text py-1"
+          >
+            {!week.theme && !isThemeFocused && (
+              <div className="absolute left-0 pointer-events-none flex items-center select-none">
+                <motion.span
+                  animate={{ opacity: [1, 0, 1] }}
+                  transition={{ repeat: Infinity, duration: 0.9, ease: 'easeInOut' }}
+                  className="w-[3px] h-7 md:h-8 bg-[#DA7756] rounded-full inline-block"
                 />
               </div>
+            )}
+            <input
+              ref={themeInputRef}
+              type="text"
+              value={week.theme || ''}
+              onFocus={() => setIsThemeFocused(true)}
+              onBlur={() => setIsThemeFocused(false)}
+              onChange={(e) => handleUpdateWeek(week.id, { theme: e.target.value })}
+              className="w-full text-2xl md:text-3xl font-bold text-[#2D2A26] bg-transparent border-none outline-none focus:ring-0 tracking-tight p-0"
+              aria-label="Weekly media theme"
+            />
+            {week.theme && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUpdateWeek(week.id, { theme: '' });
+                }}
+                className="p-1 text-[#78716A]/40 hover:text-[#DA7756] rounded-lg transition-colors cursor-pointer shrink-0 ml-2"
+                title="Clear theme"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
 
-              {/* Bottom spacer for balanced vertical alignment */}
-              <div className="h-2 shrink-0" />
-            </div>
+          {/* Right: Big Orange Date with Edit Mode & All Weeks Below It */}
+          <div className="flex flex-col items-start md:items-end shrink-0 text-left md:text-right">
+            <span className="text-3xl md:text-4xl font-serif-accent font-bold text-[#DA7756] italic select-none leading-none">
+              {week.dateLabel}
+            </span>
 
-            {/* RIGHT HALF: 2x2 Grid with prominent dead-center focal circle */}
-            <div className="relative h-full w-full flex items-center justify-center select-none overflow-hidden">
-              <div className="relative w-full h-[195px] md:h-[215px] rounded-2xl md:rounded-3xl border border-[#E6DFD5] bg-[#E6DFD5] shadow-xs">
-                {/* 2x2 Quadrant Grid */}
-                <div className="w-full h-full rounded-2xl md:rounded-3xl overflow-hidden grid grid-cols-2 grid-rows-2 gap-[1px]">
-                  {cards.map((card, i) => (
-                    <div
-                      key={card.id || i}
-                      className="relative overflow-hidden flex items-center justify-center bg-[#FAF6EE] w-full h-full"
-                    >
-                      {card.imageUrl ? (
-                        <img
-                          src={card.imageUrl}
-                          alt={card.mediaTitle || card.title || `Media ${card.indexLabel}`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-sm md:text-base font-serif-accent font-bold text-[#DA7756]/50 italic select-none">
-                          {card.indexLabel}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+            <div className="flex items-center gap-2 mt-2 select-none">
+              {/* Edit vs View Mode Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsEditMode((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  isEditMode
+                    ? 'px-2.5 py-1 rounded-xl bg-[#DA7756] hover:bg-[#C86446] text-white shadow-2xs active:scale-95'
+                    : 'text-[#78716A] hover:text-[#DA7756]'
+                }`}
+                title={isEditMode ? 'Finish editing and view filled cards' : 'Edit queue & add new media'}
+              >
+                {isEditMode ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Done</span>
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="w-3 h-3 text-[#DA7756]" />
+                    <span>Edit</span>
+                  </>
+                )}
+              </button>
 
-                {/* Prominent Dead-Center Focal Circle: Perfectly balanced across all 4 quadrants */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-xl bg-[#FAF6EE] ring-1 ring-[#DA7756]/25 flex items-center justify-center overflow-hidden transition-transform duration-200 hover:scale-105">
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F5EFE6]">
-                    <Sparkles className="w-8 h-8 md:w-9 md:h-9 text-[#DA7756]" />
-                  </div>
-                </div>
-              </div>
+              <span className="text-[#E6DFD5] text-xs leading-none">•</span>
+
+              {!isArchiveView ? (
+                <button
+                  type="button"
+                  onClick={() => setViewMode('all-weeks')}
+                  className="group inline-flex items-center gap-1.5 text-xs font-semibold text-[#78716A] hover:text-[#DA7756] transition-colors cursor-pointer"
+                  title="Browse all weeks"
+                >
+                  <Layers className="w-3.5 h-3.5 text-[#DA7756]" />
+                  <span>All Weeks ({weeks.length})</span>
+                  <span className="text-[#DA7756] font-bold group-hover:translate-x-0.5 transition-transform">
+                    →
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setViewMode('all-weeks')}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#78716A] hover:text-[#DA7756] transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-[#DA7756]" />
+                  <span>Back to Archive List</span>
+                </button>
+              )}
             </div>
           </div>
-        </motion.div>
-
-        {/* Subtle Section Divider */}
-        <div className="flex items-center justify-between pt-2 px-2">
-          <p className="text-xs uppercase tracking-widest text-[#78716A] font-semibold">
-            Active Media Queue
-          </p>
-          <span className="text-xs text-[#78716A]/70 font-medium italic">
-            4 Slots
-          </span>
         </div>
 
-        {/* 4 Cards Stacked Vertically */}
-        {cards.map((card, idx) => (
-          <motion.div
-            key={card.id}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: (idx + 1) * 0.06, ease: 'easeOut' }}
-            className={`w-full h-[230px] md:h-[240px] rounded-3xl p-6 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden border ${
-              card.isCompleted
-                ? 'bg-[#F0F4F1]/90 border-[#6E8B74]/30'
-                : 'bg-white border-[#E6DFD5]'
-            }`}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch h-full">
-              {/* LEFT HALF */}
-              <div className="flex flex-col justify-between h-full pr-0 md:pr-4 overflow-hidden">
-                {/* Header: Numeral, Media Title & Clear / Status */}
-                <div className="flex items-center justify-between shrink-0 gap-2">
-                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <span className="text-3xl md:text-4xl font-serif-accent font-bold text-[#DA7756] italic select-none shrink-0">
-                      {card.indexLabel}
-                    </span>
-
-                    {/* Media Title Field (styled in prominent serif accent like Month Theme card) */}
-                    <input
-                      type="text"
-                      value={card.mediaTitle}
-                      onChange={(e) => handleUpdateCard(card.id, { mediaTitle: e.target.value })}
-                      placeholder="Media Title (e.g. Severance)"
-                      className="flex-1 min-w-0 text-3xl md:text-4xl font-serif-accent font-bold text-[#DA7756] placeholder-[#DA7756]/35 italic bg-transparent border-none outline-none focus:ring-0 transition-colors truncate leading-none"
-                    />
-
-                    {card.isCompleted && (
-                      <span className="text-[10px] md:text-xs uppercase tracking-wider font-semibold text-[#6E8B74] bg-[#6E8B74]/15 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0">
-                        <Sparkles className="w-3 h-3" />
-                        <span>Done</span>
-                      </span>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleClearCard(card.id)}
-                    className="p-1.5 text-[#78716A]/50 hover:text-[#DA7756] hover:bg-[#FAF7F2] rounded-xl transition-colors cursor-pointer shrink-0"
-                    title="Reset slot (clears title, goal & artwork)"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Goal Input Area: 2-line Textarea matching Month Theme card */}
-                <div className="my-auto py-1">
-                  {card.isCompleted ? (
-                    <div className="py-1">
-                      <p className="text-xl md:text-2xl font-bold text-[#2D2A26]/70 line-through decoration-[#6E8B74] decoration-2 tracking-tight leading-snug line-clamp-2 select-text">
-                        {card.title || card.mediaTitle || 'Untitled Goal'}
-                      </p>
-                    </div>
-                  ) : (
-                    <textarea
-                      rows={2}
-                      value={card.title}
-                      onChange={(e) => handleUpdateCard(card.id, { title: e.target.value })}
-                      placeholder="What is your goal?"
-                      className="w-full text-xl md:text-2xl font-bold text-[#2D2A26] placeholder-[#78716A]/35 bg-transparent border-none outline-none focus:ring-0 transition-colors tracking-tight leading-snug resize-none overflow-hidden"
-                    />
-                  )}
-                </div>
-
-                {/* Footer: SlideToComplete or Completed New Goal Action */}
-                <div className="mt-auto pt-1 shrink-0">
-                  {card.isCompleted ? (
-                    <button
-                      type="button"
-                      onClick={() => handleNewGoal(card.id)}
-                      className="w-full h-[52px] flex items-center justify-center gap-2 rounded-2xl bg-[#DA7756] hover:bg-[#C86446] text-white text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-[0.99]"
-                      title="Set a new goal for this media (keeps artwork)"
-                    >
-                      <Plus className="w-4 h-4 stroke-[2.5]" />
-                      <span>New Goal</span>
-                    </button>
-                  ) : (
-                    <SlideToComplete
-                      onComplete={() => handleComplete(card.id)}
-                      disabled={!card.title.trim() && !card.mediaTitle.trim()}
-                      disabledLabel="Enter a goal to unlock"
-                      completeLabel="Slide to complete"
-                    />
-                  )}
-                </div>
+        {/* Grid of Rectangular Slots */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-6">
+          {/* Empty State when in View Mode with 0 filled cards */}
+          {slotsToDisplay.length === 0 && !isEditMode && (
+            <div className="col-span-full py-16 flex flex-col items-center justify-center text-center bg-[#FAF7F2]/60 rounded-3xl border border-dashed border-[#E6DFD5] p-8">
+              <div className="w-12 h-12 rounded-2xl bg-[#FDF3EF] border border-[#DA7756]/20 flex items-center justify-center mb-3">
+                <Sparkles className="w-6 h-6 text-[#DA7756]" />
               </div>
+              <h3 className="text-base font-bold text-[#2D2A26]">No media added to this week yet</h3>
+              <p className="text-xs text-[#78716A] max-w-sm mt-1 mb-5">
+                Switch to edit mode to start adding books, shows, movies, or games.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsEditMode(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#DA7756] hover:bg-[#C86446] text-white text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-2xs active:scale-98"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Curate Media</span>
+              </button>
+            </div>
+          )}
 
-              {/* RIGHT HALF: Image Upload & Display with strictly locked previous image size */}
-              <div className="flex items-center justify-center h-full w-full">
+          {slotsToDisplay.map((slot, index) => {
+            const indexStr = String(index + 1).padStart(2, '0');
+            const fileRefKey = `${week.id}-${slot.id}`;
+
+            return (
+              <div
+                key={slot.id}
+                className={`relative flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden shadow-2xs hover:shadow-xs ${
+                  slot.isCompleted
+                    ? 'bg-[#F0F4F1]/90 border-[#6E8B74]/35'
+                    : 'bg-[#FAF7F2] border-[#E6DFD5] hover:border-[#DA7756]/40'
+                }`}
+              >
+                {/* 1. Rectangular Artwork Upload / Poster Area */}
                 <div
-                  className={`group relative rounded-2xl border-2 border-dashed overflow-hidden flex items-center justify-center transition-colors cursor-pointer h-[152px] md:h-[162px] w-full ${
-                    card.isCompleted
-                      ? 'border-[#6E8B74]/30 bg-[#F0F4F1]/60 hover:border-[#6E8B74]/50'
-                      : 'border-[#E6DFD5] bg-[#FAF7F2] hover:border-[#DA7756]/50'
-                  }`}
-                  onDrop={(e) => handleDrop(card.id, e)}
-                  onDragOver={handleDragOver}
-                  onClick={() => fileInputRefs.current[card.id]?.click()}
+                  className="relative h-[145px] md:h-[150px] w-full bg-[#FAF6EE] border-b border-[#E6DFD5] flex items-center justify-center cursor-pointer group overflow-hidden select-none"
+                  onClick={() => fileInputRefs.current[fileRefKey]?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleImageUpload(week.id, slot.id, file);
+                  }}
                 >
-                  {/* Hidden File Input */}
                   <input
                     type="file"
                     accept="image/*"
                     ref={(el) => {
-                      fileInputRefs.current[card.id] = el;
+                      fileInputRefs.current[fileRefKey] = el;
                     }}
-                    onChange={(e) => handleFileChange(card.id, e)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(week.id, slot.id, file);
+                      e.target.value = '';
+                    }}
                     className="hidden"
                   />
 
-                  {card.imageUrl ? (
-                    /* Uploaded Image strictly adhering to the locked bounds */
-                    <div className="absolute inset-0 w-full h-full">
+                  {slot.imageUrl ? (
+                    <>
                       <img
-                        src={card.imageUrl}
-                        alt={card.mediaTitle || card.title || `Media ${card.indexLabel}`}
-                        className="w-full h-full object-cover rounded-2xl"
+                        src={slot.imageUrl}
+                        alt={slot.title || `Media ${indexStr}`}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
                       />
-                      {/* Hover Actions Overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl flex items-center justify-center gap-2 p-2">
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-2">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            fileInputRefs.current[card.id]?.click();
+                            fileInputRefs.current[fileRefKey]?.click();
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-[#2D2A26] rounded-xl text-xs font-semibold shadow-md hover:bg-[#FDF3EF] hover:text-[#DA7756] transition-all cursor-pointer"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
                           <span>Replace</span>
                         </button>
-
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleUpdateCard(card.id, { imageUrl: '' });
+                            handleUpdateSlot(week.id, slot.id, { imageUrl: '' });
                           }}
                           className="p-1.5 bg-white text-[#C86446] rounded-xl shadow-md hover:bg-red-50 transition-all cursor-pointer"
                           title="Remove image"
@@ -453,25 +594,287 @@ export const MediaView: React.FC = () => {
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    </div>
+                    </>
                   ) : (
-                    /* Empty state: upload icon conforming to exact same size */
-                    <div className="w-full h-full flex items-center justify-center p-4">
-                      <Upload
-                        className={`w-10 h-10 transition-all duration-300 group-hover:scale-110 ${
-                          card.isCompleted
-                            ? 'text-[#6E8B74]/60 group-hover:text-[#6E8B74]'
-                            : 'text-[#DA7756]/60 group-hover:text-[#DA7756]'
-                        }`}
-                      />
+                    <div className="flex flex-col items-center justify-center gap-1.5 text-[#78716A]/60 group-hover:text-[#DA7756] transition-colors p-4">
+                      <Upload className="w-7 h-7 stroke-[1.75] transition-transform duration-200 group-hover:scale-110" />
+                      <span className="text-[11px] font-semibold tracking-wide uppercase">
+                        Drop Artwork
+                      </span>
                     </div>
                   )}
                 </div>
+
+                {/* 2. Rectangular Slot Body: Media Title and Borderless Day Buttons */}
+                <div className="p-4 flex flex-col justify-between flex-1 gap-3">
+                  {/* Media Title Field */}
+                  <div className="flex items-center justify-between gap-2">
+                    <input
+                      type="text"
+                      value={slot.title}
+                      onChange={(e) =>
+                        handleUpdateSlot(week.id, slot.id, { title: e.target.value })
+                      }
+                      placeholder="Media Title (e.g. Severance)"
+                      className="w-full text-base font-bold text-[#2D2A26] placeholder-[#78716A]/40 bg-transparent border-none outline-none focus:ring-0 leading-tight"
+                    />
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => handleClearSlot(week.id, slot.id)}
+                        className="p-1 text-[#78716A]/40 hover:text-[#DA7756] hover:bg-white rounded-lg transition-colors cursor-pointer shrink-0"
+                        title="Clear slot"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 3. Horizontally Aligned Borderless Day Buttons: Sa, Su, Mo, Tu, We, Th, Fr */}
+                  <div className="pt-2 border-t border-[#E6DFD5]/50">
+                    <div className="grid grid-cols-7 gap-0.5 w-full items-center justify-items-center">
+                      {WEEK_DAYS.map((day) => {
+                        const isActive = (slot.activeDays || []).includes(day);
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => handleToggleDay(week.id, slot.id, day)}
+                            title={`Toggle ${day}`}
+                            className={`py-1 px-1 flex items-center justify-center transition-all cursor-pointer select-none bg-transparent border-none outline-none ${
+                              isActive
+                                ? 'text-base md:text-lg font-extrabold text-[#DA7756] scale-110 drop-shadow-2xs'
+                                : 'text-sm md:text-base font-semibold text-[#78716A]/40 hover:text-[#2D2A26] hover:scale-105'
+                            }`}
+                          >
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
+            );
+          })}
+
+          {/* Add Another Slot Button (visible only in Edit Mode) */}
+          {isEditMode && (
+            <button
+              type="button"
+              onClick={() => handleAddSlot(week.id)}
+              className="flex flex-col items-center justify-center min-h-[240px] rounded-2xl border-2 border-dashed border-[#E6DFD5] hover:border-[#DA7756]/60 bg-[#FAF7F2]/60 hover:bg-[#FDF3EF]/40 text-[#78716A] hover:text-[#DA7756] transition-all cursor-pointer p-6 group"
+              title="Add another rectangular slot"
+            >
+              <div className="w-10 h-10 rounded-full bg-white group-hover:bg-[#DA7756] text-[#78716A] group-hover:text-white border border-[#E6DFD5] group-hover:border-transparent flex items-center justify-center mb-3 transition-colors shadow-2xs">
+                <Plus className="w-5 h-5 stroke-[2.5]" />
+              </div>
+              <span className="text-xs font-bold tracking-wider uppercase">
+                Add Media Slot
+              </span>
+              <span className="text-[11px] text-[#78716A]/70 mt-1 font-medium">
+                Expand this week's queue
+              </span>
+            </button>
+          )}
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Render the Secondary Page: Heavily Shrunk All Weeks Grid
+  const renderAllWeeksView = () => {
+    return (
+      <motion.div
+        key="all-weeks"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="w-full flex flex-col gap-6"
+      >
+        {/* Header bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E6DFD5]">
+          <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('current')}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#DA7756] hover:text-[#C86446] transition-colors cursor-pointer self-start mb-1"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Current Week</span>
+            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl md:text-4xl font-serif-accent font-bold text-[#DA7756] italic">
+                All Weeks Archive
+              </span>
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#E6DFD5]/60 text-[#78716A]">
+                {weeks.length} {weeks.length === 1 ? 'week' : 'weeks'}
+              </span>
             </div>
-          </motion.div>
-        ))}
-      </div>
+            <p className="text-xs text-[#78716A]/80">
+              Browse your weekly media timelines. Click any week card to expand it into full view.
+            </p>
+          </div>
+        </div>
+
+        {/* Heavily Shrunk / Truncated Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-12">
+          {weeks.map((week) => {
+            const isCurrent = week.id === currentWeekMeta.id;
+            const weekDaysCount = week.slots.reduce((sum, s) => sum + (s.activeDays?.length || 0), 0);
+            const filledSlots = week.slots.filter(
+              (s) => s.title.trim() || (s.activeDays?.length || 0) > 0 || s.imageUrl
+            );
+            const artworkThumbnails = week.slots.filter((s) => s.imageUrl).slice(0, 4);
+
+            return (
+              <div
+                key={week.id}
+                onClick={() => {
+                  setSelectedWeekId(week.id);
+                  setViewMode('archived');
+                }}
+                className={`group relative rounded-2xl border p-4 transition-all duration-200 cursor-pointer flex flex-col justify-between h-[210px] overflow-hidden select-none hover:-translate-y-1 hover:shadow-md ${
+                  isCurrent
+                    ? 'bg-white border-[#DA7756]/60 shadow-xs ring-1 ring-[#DA7756]/20'
+                    : 'bg-white border-[#E6DFD5] hover:border-[#DA7756]/50'
+                }`}
+              >
+                {/* Shrunk Card Top: Date & Badge */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-serif-accent font-bold text-base md:text-lg text-[#2D2A26] group-hover:text-[#DA7756] transition-colors italic truncate">
+                      {week.dateLabel}
+                    </span>
+                    {isCurrent && (
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#DA7756] bg-[#FDF3EF] border border-[#DA7756]/30 px-2 py-0.2 rounded-full shrink-0">
+                        Current
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Truncated Theme Line */}
+                  <p className="text-xs text-[#78716A] line-clamp-1 italic">
+                    {week.theme || 'No theme specified'}
+                  </p>
+                </div>
+
+                {/* Shrunk Card Middle: Miniature Artwork Mosaic Preview */}
+                <div className="my-auto py-2">
+                  {artworkThumbnails.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-1.5 h-12 w-full rounded-xl overflow-hidden bg-[#FAF6EE] p-1 border border-[#E6DFD5]/60">
+                      {artworkThumbnails.map((slot, i) => (
+                        <div
+                          key={slot.id || i}
+                          className="relative h-full w-full rounded-lg overflow-hidden bg-[#FAF7F2]"
+                        >
+                          <img
+                            src={slot.imageUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                      {/* Fill empty boxes if fewer than 4 */}
+                      {Array.from({ length: Math.max(0, 4 - artworkThumbnails.length) }).map(
+                        (_, idx) => (
+                          <div
+                            key={idx}
+                            className="h-full w-full rounded-lg bg-[#FAF7F2]/60 border border-dashed border-[#E6DFD5]"
+                          />
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-12 w-full rounded-xl bg-[#FAF7F2] border border-dashed border-[#E6DFD5] flex items-center justify-center text-[11px] text-[#78716A]/50">
+                      <span>{filledSlots.length} media items logged</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Shrunk Card Footer: Completion Status & Action */}
+                <div className="pt-2 border-t border-[#E6DFD5]/60 flex items-center justify-between text-xs">
+                  <span
+                    className={`font-semibold inline-flex items-center gap-1 text-[11px] ${
+                      weekDaysCount > 0 ? 'text-[#DA7756]' : 'text-[#78716A]'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#6E8B74]" />
+                    <span>
+                      {weekDaysCount} {weekDaysCount === 1 ? 'day' : 'days'} logged
+                    </span>
+                  </span>
+
+                  <span className="text-[11px] font-bold text-[#DA7756] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                    View card →
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </motion.div>
+    );
+  };
+
+  return (
+    <main className="flex-1 min-h-0 px-4 md:px-8 py-4 md:py-6 max-w-6xl w-full mx-auto overflow-y-auto custom-scrollbar select-none">
+      {/* Disclaimer Banner for Archive View */}
+      {viewMode === 'archived' && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full mb-5 p-4 rounded-2xl bg-[#F5F0E8] border border-[#E6DFD5] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#DA7756]/15 flex items-center justify-center shrink-0">
+              <History className="w-4 h-4 text-[#DA7756]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs uppercase tracking-wider font-bold text-[#DA7756]">
+                  Archived Week View
+                </span>
+                <span className="text-xs text-[#78716A]">·</span>
+                <span className="text-xs font-semibold text-[#2D2A26]">
+                  {activeDisplayedWeek.dateLabel}
+                </span>
+              </div>
+              <p className="text-xs text-[#78716A]">
+                You are viewing past weekly media. Any adjustments made here update this historical entry.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode('all-weeks')}
+              className="px-3 py-1.5 rounded-xl border border-[#E6DFD5] bg-white hover:bg-[#FAF7F2] text-xs font-semibold text-[#78716A] hover:text-[#2D2A26] transition-all cursor-pointer shadow-2xs"
+            >
+              ← All Weeks
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedWeekId(currentWeekMeta.id);
+                setViewMode('current');
+              }}
+              className="px-3 py-1.5 rounded-xl bg-[#DA7756] hover:bg-[#C86446] text-white text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+            >
+              Jump to This Week →
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Main Content Switcher */}
+      <AnimatePresence mode="wait">
+        {viewMode === 'all-weeks'
+          ? renderAllWeeksView()
+          : renderLargeCard(activeDisplayedWeek, viewMode === 'archived')}
+      </AnimatePresence>
     </main>
   );
 };

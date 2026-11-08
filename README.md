@@ -113,7 +113,7 @@ For detailed functional specifications and component mechanics, refer to the ded
 
 - 🧭 **[Navigation Bar Specification](navbar.md)**
   - Adaptive active label vs. inactive icon-only tab interaction
-  - 5-space hierarchy: Focus, Media, Health, Tip, Support
+  - 6-space hierarchy: Focus, Pain Points, Media, Health, Tip, Support
   - Decoupling of completed history access to preserve 3-card grid isolation
 - 🎯 **[Focus View Specification](docs/FOCUS_VIEW.md)**
   - Fixed 3-card layout rules
@@ -131,6 +131,11 @@ For detailed functional specifications and component mechanics, refer to the ded
   - Strict 26-character input limit keeping entries punchy and preventing sentence tasks
   - Quick-glance friction reservoir that feeds directly into the 3 daily Focus goals
   - One-tap keyword dismissal
+- 🎬 **[Media View Specification](media.md)**
+  - Curated editorial Monthly Theme card & 4-slot media queue
+  - Enforced locked card dimensions (`h-[230px] md:h-[240px]`) with fixed image frame (`h-[152px] md:h-[162px]`)
+  - Tactile slide-to-complete button with warm confetti and acoustic chime feedback
+  - Drag-and-drop media artwork upload with client-side canvas compression
 - 🌿 **[Health View Specification](health.md)**
   - Dynamic time-of-day greeting (*"Good morning"*, *"Good afternoon"*, *"Good evening"*)
   - Pure present-moment reminder (completely untracked, zero catch-up prompts or streak pressure)

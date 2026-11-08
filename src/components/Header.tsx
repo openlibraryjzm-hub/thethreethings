@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Rows3, Mountain, Apple, Lightbulb, Heart } from 'lucide-react';
+import { Target, Rows3, Mountain, Film, Apple, Lightbulb, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActiveView } from '../types';
 
@@ -18,6 +18,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'focus', label: 'Focus', icon: Rows3 },
   { id: 'painpoints', label: 'Pain Points', icon: Mountain },
+  { id: 'media', label: 'Media', icon: Film },
   { id: 'health', label: 'Health', icon: Apple },
   { id: 'tip', label: 'Tip', icon: Lightbulb },
   { id: 'support', label: 'Support', icon: Heart },
@@ -39,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Navigation Buttons: Active tab shows label, inactive tabs are icon-only */}
-      <div className="flex items-center gap-1.5 bg-[#E6DFD5]/50 p-1 rounded-2xl border border-[#E6DFD5]">
+      <div className="flex items-center gap-1 md:gap-1.5 bg-[#E6DFD5]/50 p-1 rounded-2xl border border-[#E6DFD5] shrink-0">
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
           const isActive = activeView === id;
           return (
