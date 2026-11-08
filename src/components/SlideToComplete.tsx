@@ -139,6 +139,7 @@ export const SlideToComplete: React.FC<SlideToCompleteProps> = ({
   return (
     <div
       ref={containerRef}
+      data-no-swipe="true"
       className={`relative w-full h-[52px] p-1 rounded-2xl border flex items-center select-none overflow-hidden transition-colors ${
         disabled
           ? 'bg-[#F5F0E8]/70 border-[#E6DFD5] opacity-70 cursor-not-allowed'

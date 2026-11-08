@@ -154,6 +154,7 @@ export const CalendarPopover: React.FC<CalendarPopoverProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
+            data-no-swipe="true"
             className="absolute right-0 top-full mt-2 w-72 p-4 bg-white rounded-2xl border border-[#E6DFD5] shadow-lg z-50"
           >
             {/* Header: Month/Year navigation */}

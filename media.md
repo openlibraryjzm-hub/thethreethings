@@ -17,6 +17,7 @@ It transitions the app from a monthly overview to an intentional 7-day focus. It
 4. **Secondary Heavily-Shrunk Archive Page:** A secondary overview page presents all past and present weeks as compact, heavily shrunk and truncated preview cards, creating an easily scrollable chronological visual timeline.
 5. **Full-Fidelity Archived View with Disclaimer:** Clicking any shrunk card in the archive opens that week in full view, complete with a prominent disclaimer banner indicating that the user is browsing historical media logs.
 6. **Self-Contained Media Model:** Media completions trigger Web Audio harmonic acoustic chimes and confetti, but remain self-contained within the Media space and do not pollute the primary daily Focus accomplishment history.
+7. **Spatial Media Desires Cloud:** For broad backlogs, genres, and wishlist titles without cluttering the active weekly card, users reference the rock-solid **Media Desires Word Cloud** located in the Pain Points tab ([`painpoint.md`](painpoint.md)).
 
 ---
 

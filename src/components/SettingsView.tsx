@@ -287,7 +287,7 @@ export const SettingsView: React.FC = () => {
           <div className={`transition-all duration-300 ${
             settings.notifications.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'
           }`}>
-            <div className="p-5 rounded-2xl bg-[#FAF7F2]/80 border border-[#E6DFD5] space-y-4">
+            <div data-no-swipe="true" className="p-5 rounded-2xl bg-[#FAF7F2]/80 border border-[#E6DFD5] space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-[#DA7756]" />

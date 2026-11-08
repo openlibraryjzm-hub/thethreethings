@@ -1,23 +1,23 @@
 # Media View Specification 🎬
 
-> Comprehensive technical and architectural guide for the **Media** tab in **The Three Things**.
+> Comprehensive technical and architectural guide for the **Weekly Media** tab in **The Three Things**.
 
 ---
 
 ## 📌 Architecture & Design Philosophy
 
-The **Media** tab provides a calm, tactile personal tracker for books, television series, anime, movies, podcasts, and other media items.
+The **Media** tab provides a calm, tactile personal tracker for books, television series, anime, movies, podcasts, and games organized on an editorial **weekly cadence**.
 
-It follows the same warm stationery design language as the **Focus** and **Completed** views, prioritizing visual calm, clear hierarchy, and zero clutter.
+It transitions the app to an intentional 7-day focus. It retains the same warm stationery aesthetic as the **Focus** and **Completed** views, prioritizing visual calm, clear hierarchy, and zero clutter.
 
 ### 🔒 Core Design Principles
-1. **Curated Monthly Anchor:** An editorial **Monthly Theme** card heads the view, setting the tone for the user's media consumption each month.
-2. **Vertical 4-Card Queue:** Exactly four permanent media cards stacked vertically (`01`, `02`, `03`, `04`).
-3. **Fixed Card Dimensions:** Every card enforces a strict locked height (`h-[230px] md:h-[240px]`). Cards never expand, stretch, or change size when artwork is uploaded.
-4. **Split 50/50 Architecture:**
-   - **Left Half:** Typography, controls, inputs, and tactile actions.
-   - **Right Half:** Dedicated artwork / moodboard upload area strictly constrained to the card bounds.
-5. **Independent Completion Model:** Completed media items are self-contained within the Media view. They **do not** write to the primary daily Focus accomplishment history or the Completed tab.
+1. **Saturday–Friday Weekly Cadence:** Weeks follow an unorthodox, lifestyle-first cadence starting on **Saturday** and ending on **Friday**. Saturday and Sunday act as the first 2 weekend kick-off days, followed by Monday through Friday as the remaining 5 weekday completion days (e.g. `Nov 7 – 13, 2026`). Every date in the calendar strictly partitions into one 7-day Saturday–Friday block.
+2. **Single Large Hero Card:** The primary Media screen features **one very large card** displaying the active week's curation, keeping focus contained and uncluttered.
+3. **Grid of Rectangular Slots:** Inside the large weekly card, media items reside in a responsive grid of sleek rectangular slots (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`). Users can expand this grid anytime with `+ Add Media Slot`.
+4. **Secondary Heavily-Shrunk Archive Page:** A secondary overview page presents all past and present weeks as compact, heavily shrunk and truncated preview cards, creating an easily scrollable chronological visual timeline.
+5. **Full-Fidelity Archived View with Disclaimer:** Clicking any shrunk card in the archive opens that week in full view, complete with a prominent disclaimer banner indicating that the user is browsing historical media logs.
+6. **Self-Contained Media Model:** Media completions trigger Web Audio harmonic acoustic chimes and confetti, but remain self-contained within the Media space and do not pollute the primary daily Focus accomplishment history.
+7. **Spatial Media Desires Cloud:** For broad backlogs, genres, and wishlist titles without cluttering the active weekly card, users reference the rock-solid **Media Desires Word Cloud** located in the Pain Points tab ([`painpoint.md`](../painpoint.md)).
 
 ---
 
@@ -26,99 +26,123 @@ It follows the same warm stationery design language as the **Focus** and **Compl
 ```
 src/
 ├── types/
-│   └── index.ts               # ActiveView ('focus' | 'completed' | 'media')
+│   └── index.ts               # ActiveView ('focus' | 'completed' | 'media'...), WeeklyMediaCard, WeeklyMediaSlot
 ├── components/
 │   ├── Header.tsx             # Navigation bar including the Media tab button
-│   ├── SlideToComplete.tsx    # Tactile gesture knob component
-│   └── MediaView.tsx          # Monthly Theme & 4-card vertical media tracker
+│   └── MediaView.tsx          # Single large weekly card, rectangular slots grid & all-weeks archive
 └── (Local Storage)
-    ├── the_three_things_media_cards_v1    # Persistent JSON serialized media slots
-    └── the_three_things_monthly_theme_v1  # Persistent JSON serialized monthly theme
+    ├── the_three_things_weekly_media_v2   # Persistent JSON serialized weekly media cards
+    └── the_three_things_media_cards_v1    # Legacy v1 storage (gracefully migrated on first run)
 ```
 
 ---
 
-## 🌟 The Monthly Theme Card
+## 🌟 The Main Media Page: Large Weekly Card
 
-Positioned prominently at the top of the Media view, the Monthly Theme card anchors the user's monthly media curation like a magazine cover or journal chapter header.
+The main view (`viewMode = 'current'`) renders **one very large card** (`w-full rounded-3xl p-6 md:p-8 bg-white border border-[#E6DFD5] shadow-xs`):
 
-### 1. Left Half: Month Anchor & 2-Line Theme Input
-- **Month Anchor:** Automatically displays the current month (e.g. `November`) in large italic serif accent (`text-3xl md:text-4xl font-serif-accent font-bold text-[#DA7756] italic`).
-- **Theme Title Input:** A 2-line auto-wrapping text area in bold charcoal (`text-xl md:text-2xl font-bold text-[#2D2A26]`), allowing the full placeholder prompt and multi-line themes to display naturally.
-- **Clear Button:** Top-right trash icon to wipe the theme title back to empty.
+### 1. Card Header & Dual-Mode Controls
+- **Left:** Large, borderless Weekly Focus / Theme text input (`text-2xl md:text-3xl font-bold text-[#2D2A26]`). Omits greyed-out suggestion text in favor of an active blinking terracotta typewriter cursor indicator (`animate-pulse`).
+- **Right:** 
+  - **Date Range Anchor:** Large italic serif accent (`Nov 7 – 13, 2026` in `text-3xl md:text-4xl font-serif-accent font-bold text-[#DA7756] italic`).
+  - **Dual-Mode & Archive Actions:** Directly below the date:
+    - **`Edit` / `Done` Toggle:** Switches between Curated View Mode and Edit Mode.
+    - **`All Weeks (X) →`:** Clean text link navigating to the timeline archive.
 
-### 2. Right Half: 2x2 Grid Mosaic Frame with Prominent Focal Centerpiece
-- Automatically mirrors the artwork from queue cards `01`, `02`, `03`, and `04` below in real-time.
-- Styled as a unified rounded rectangle (`w-full h-[195px] md:h-[215px] rounded-2xl md:rounded-3xl border border-[#E6DFD5] bg-[#E6DFD5] shadow-xs`) split into a 2x2 quadrant grid:
-  - **Quadrant 1 (Top-Left):** Mirrors Card `01`.
-  - **Quadrant 2 (Top-Right):** Mirrors Card `02`.
-  - **Quadrant 3 (Bottom-Left):** Mirrors Card `03`.
-  - **Quadrant 4 (Bottom-Right):** Mirrors Card `04`.
-  - **Dividers:** Clean 1px crosshair separation revealing the warm `#E6DFD5` border between cells.
-  - **Prominent Dead-Center Focal Circle:** A hero centerpiece circular seal (`w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white shadow-xl bg-[#FAF6EE] ring-1 ring-[#DA7756]/25`) anchored precisely at `50% X / 50% Y`, ensuring equal, symmetrical 25% overlap across all 4 quadrants as a prominent thumbnail representing all media.
-  - **Content:** When artwork is uploaded, fills the quadrant (`object-cover`). When empty, displays a warm paper tile (`#FAF6EE`) with the serif italic numeral (`01`, `02`, `03`, `04`).
-- Read-only visual mosaic: no manual upload needed on this card.
+### 2. Dual-Mode Slot Display
+- **Curated View Mode (Default):** Shows **only** the cards you have actually filled out with titles, artwork, or logged days. Empty placeholder cards and the `+ Add Media Slot` button are completely hidden, providing a serene, clutter-free gallery. The 7-day buttons remain fully interactive for daily logging.
+- **Edit Mode:** Reveals all cards (both filled and empty ready to be populated), the `+ Add Media Slot` expander, and slot-clearing controls. Clicking `Done` collapses back to the clean Curated View.
 
----
+### 3. Responsive Grid of Rectangular Slots
+Arranged in an airy responsive grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5`):
 
-## 🃏 Media Queue Cards (`01` - `04`)
+#### A. Rectangular Artwork Upload / Poster Header (`h-[145px] md:h-[150px]`)
+- Fixed aspect ratio frame with `object-cover` styling.
+- **Empty State:** Subtle paper-cream canvas with terracotta upload icon and `Drop Artwork` prompt. Supports click-to-pick and drag-and-drop.
+- **Uploaded State:** Crisp artwork display with frosted hover actions (`Replace` and `Remove`).
+- **Client-Side Compression:** Images are compressed via canvas to lightweight JPEG (`quality: 0.82`, max dimension 960px) to safeguard `localStorage` storage limits.
 
-### 1. Left Half: Media Title, Goal & Slide to Complete
+#### B. Media Title & Borderless Day Buttons
+- **Media Title Field:** Bold charcoal input (`font-bold text-[#2D2A26]`) for overarching title (e.g. *Severance*, *Dune*, *Three-Body Problem*) with quick trash reset.
+- **7 Horizontally Aligned Day Buttons:** A clean, borderless typographic strip with buttons for each day in Saturday–Friday order:
+  - `Sa`, `Su`, `Mo`, `Tu`, `We`, `Th`, `Fr`
+  - Inactive days are displayed in calm, muted taupe typography.
+  - Active (logged) days feature larger, prominent bold orange text (`text-[#DA7756]`).
+  - Clicking any day marks that day as completed with a tactile acoustic chime ([`playCompletionSound()`](../src/utils/sound.ts)). Completing all 7 days triggers celebratory confetti.
 
-#### A. Card Index & Media Title (`Top Left`)
-- Large italic serif numerals (`01`, `02`, `03`, `04`) in `font-serif-accent font-bold text-[#DA7756] italic text-3xl md:text-4xl`.
-- **Media Title Field:** Placed directly to the right of the numeral in matching prominent orange serif italics (`text-3xl md:text-4xl font-serif-accent font-bold text-[#DA7756] italic`), creating the same visual hierarchy as the Month Theme card. Designed for the overarching media title (e.g. *Severance*, *Dune*, *Elden Ring*).
-- Reset slot button (trash icon) to completely wipe the card (media title, goal, artwork, completion).
-- When completed, displays a subtle sage badge (`Done ✨`).
-
-#### B. Goal Textarea (`Center`)
-- Auto-wrapping 2-line textarea in bold charcoal matching the Month Theme card (`text-xl md:text-2xl font-bold text-[#2D2A26] leading-snug resize-none`).
-- Placeholder: `What is your goal?`.
-- Provides spacious multi-line room for goal descriptions without clipping.
-- When completed, shows goal text with sage strike-through decoration (`line-through decoration-[#6E8B74] decoration-2 text-[#2D2A26]/70`).
-
-#### C. Slide to Complete (`Footer`)
-- Uses the same tactile `SlideToComplete` gesture knob as the Focus view:
-  - Enabled when a goal or media title is entered (`Slide to complete →`).
-  - 75% drag threshold triggers completion with arpeggiated acoustic chime (`playCompletionSound()`) and palette-toned confetti.
-- **Post-Completion Action:**
-  - **New Goal:** A single full-width terracotta button that clears the specific goal text and resets completion status while **preserving the media title and right-half artwork**, making it seamless to track sequential goals (e.g., episode by episode) for the same media item. Resetting the entire slot and artwork is performed via the header trash icon.
+#### C. Dynamic "+ Add Media Slot" Button
+- Positioned at the end of the rectangular grid as a dashed container matching slot geometry.
+- Allows users to expand the week's queue from the default 6 slots to any custom number of slots.
 
 ---
 
-### 2. Right Half: Media Artwork Upload Area
+## 🗄️ Secondary Page: All Weeks Archive
 
-#### A. Strict Image Containment
-- Contained within `relative rounded-2xl border-2 border-dashed overflow-hidden`.
-- Uses `absolute inset-0 w-full h-full` and `object-cover rounded-2xl` for the image element.
-- **Key Invariant:** The upload box is strictly locked to its previous dimensions (`h-[152px] md:h-[162px] w-full`) vertically centered in the taller card, ensuring that increasing card height to accommodate the goal textarea and slider never alters or expands artwork dimensions.
+Accessed via the `All Weeks →` button in the header (`viewMode = 'all-weeks'`):
 
-#### B. Empty State & Upload
-- Enlarged terracotta upload icon with scale-up hover physics.
-- Supports both click-to-pick and drag-and-drop.
-- Automatic client-side canvas compression to JPEG (`quality: 0.82`, max dimension 1000px).
-- Hover frosted overlay with **Replace** and **Remove**.
+### 1. Editorial Header Bar
+- **Back Navigation:** `← Back to Current Week` link for instant return.
+- **Archive Title:** `All Weeks Archive` with total week tally badge.
+- **Description:** Concise guidance explaining the timeline and navigation.
+
+### 2. Heavily Shrunk / Truncated Cards Grid
+Displays all weeks in a dense, easily scrollable responsive grid (`grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4`):
+- **Fixed Shrunk Dimensions:** Compact fixed height (`h-[210px]`) allowing dozens of weeks to be scanned rapidly.
+- **Visuals:**
+  - **Date Range:** Serif italic week dates (`font-serif-accent font-bold text-base md:text-lg`).
+  - **Current Badge:** Highlighted terracotta pill for the active calendar week.
+  - **Truncated Theme:** 1-line italic snippet of the week's theme/mantra.
+  - **Miniature Artwork Mosaic:** A compact row of up to 4 micro-thumbnails displaying the cover artwork from that week's logged media.
+  - **Completion Progress:** Sage completion ratio indicator (`X/Y done`).
+  - **Hover Kinetics:** Subtle lift (`hover:-translate-y-1 hover:shadow-md`) and `View card →` reveal.
+- **Click Interaction:** Clicking any shrunk card opens that week in **Full View** with the archive disclaimer.
+
+---
+
+## 📜 Archived Week Full View
+
+When viewing any past week (`viewMode = 'archived'`):
+
+### 1. Prominent Archive Disclaimer Banner
+Anchored at the top of the screen before the large card:
+- Warm paper cream container (`bg-[#F5F0E8] border border-[#E6DFD5] rounded-2xl p-4 shadow-2xs`).
+- **Notice:** Displays `<History />` icon with copy:
+  > *"Archived Week View · You are viewing past weekly media. Any adjustments made here update this historical entry."*
+- **Quick Return Actions:**
+  - `← All Weeks` button to jump back to the archive grid.
+  - `Jump to This Week →` button to instantly switch back to the active calendar week.
+
+### 2. Full-Fidelity Large Card
+Renders the exact large card layout for that selected week, enabling full inspection of past artwork posters, notes, titles, and completion logs.
 
 ---
 
 ## 🔑 Data Models
 
-### TypeScript Definitions
+Defined in [`src/types/index.ts`](../src/types/index.ts):
 
 ```typescript
-export interface MonthlyThemeData {
-  theme: string;       // e.g. "90s Cyberpunk & Neo-Noir"
-  notes: string;       // e.g. "Catching up on classic retro animation"
-  imageUrl?: string;   // Base64 data URL of compressed moodboard
+export type DayKey = 'Sa' | 'Su' | 'Mo' | 'Tu' | 'We' | 'Th' | 'Fr';
+
+export interface WeeklyMediaSlot {
+  id: string;          // Unique slot identifier
+  title: string;       // Media title (e.g. 'Severance', 'Dune')
+  activeDays?: DayKey[]; // Days logged: Sa, Su, Mo, Tu, We, Th, Fr
+  imageUrl?: string;   // Base64 compressed artwork
+  completedAt?: number;// Unix timestamp when completed
 }
 
-export interface MediaCardItem {
-  id: string;          // e.g. 'media-card-1'
-  indexLabel: string;  // '01', '02', '03', '04'
-  mediaTitle: string;  // Title of overarching media (e.g. 'Severance', 'Dune')
-  title: string;       // Specific goal (e.g. 'Watch 1 episode', 'Beat xyz level')
-  isCompleted: boolean;// True when user slides to complete
-  imageUrl?: string;   // Base64 data URL of compressed image
+export interface WeeklyMediaCard {
+  id: string;          // e.g. 'week-2026-11-07' (Saturday start date)
+  year: number;        // e.g. 2026
+  weekNumber?: number; // Week number reference
+  startDate: string;   // ISO string (Saturday)
+  endDate: string;     // ISO string (Friday)
+  dateLabel: string;   // Formatted range (e.g. 'Nov 7 – 13, 2026')
+  theme?: string;      // Weekly focus or mantra
+  slots: WeeklyMediaSlot[];
+  createdAt: number;
+  updatedAt: number;
 }
 ```
 
@@ -128,11 +152,11 @@ export interface MediaCardItem {
 
 | Role | Color Token | Class | Usage |
 | :--- | :--- | :--- | :--- |
-| **Theme Card Surface**| Gradient `#FFFDF9` to `#F5EFE6` | `bg-gradient-to-br ...` | Monthly theme card background |
-| **Card Surface** | `#FFFFFF` | `bg-white` | Active media card background |
-| **Card Completed** | `#F0F4F1`/90 | `bg-[#F0F4F1]/90` | Completed media card background |
-| **Card Border** | `#E6DFD5` | `border-[#E6DFD5]` | Card borders and dividers |
-| **Title Text** | `#2D2A26` | `text-[#2D2A26]` | Primary bold title |
-| **Month / Index** | `#DA7756` | `font-serif-accent text-[#DA7756]` | Large serif italic numerals and month |
-| **Slider Knob** | `#DA7756` | `bg-[#DA7756]` | Slide to complete knob |
-| **Completed Badge**| `#6E8B74` | `text-[#6E8B74] bg-[#6E8B74]/15` | Completed status badge |
+| **Large Card Surface** | `#FFFFFF` | `bg-white` | Primary weekly card container |
+| **Slot Surface (Active)** | `#FAF7F2` | `bg-[#FAF7F2]` | Active rectangular slot background |
+| **Slot Surface (Done)** | `#F0F4F1`/90 | `bg-[#F0F4F1]/90` | Completed rectangular slot background |
+| **Card & Slot Borders** | `#E6DFD5` | `border-[#E6DFD5]` | Warm dividers and outer borders |
+| **Weekly Accent Date** | `#DA7756` | `font-serif-accent text-[#DA7756] italic` | Large serif italic date range |
+| **Current Week Badge** | `#DA7756` / `#FDF3EF` | `text-[#DA7756] bg-[#FDF3EF]` | Active week indicator |
+| **Completed Badge** | `#6E8B74` / `#F0F4F1` | `text-[#6E8B74] bg-[#F0F4F1]` | Completed counter and status tags |
+| **Primary Button** | `#DA7756` / `#C86446` | `bg-[#DA7756] hover:bg-[#C86446]` | Tactile completion & New Goal buttons |

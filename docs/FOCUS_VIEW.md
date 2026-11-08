@@ -12,7 +12,9 @@ The Focus View is the primary screen of **The Three Things**. It provides a calm
 - **Fixed Slots:** The Focus View always displays exactly three goal cards (`01`, `02`, `03`).
 - **No Slot Deletion:** Cards are permanent fixtures. Under no circumstances should a card be deleted, removed from the grid, or require manual creation via an "Add Slot" action.
 - **State Normalization:** The app enforces `ensureThreeGoals` on startup, automatically healing any legacy or corrupt local storage states to guarantee 3 permanent slots.
-- **Completed History Access Point:** Rather than cluttering the top navigation bar, completed history is accessed directly via a quiet counter pill in the Focus subheader (`{N} goals completed · View all →`). Placing this in the header row outside the grid preserves exactly 3 cards on both desktop (1x3 horizontal) and mobile (3x1 vertical stack).
+- **Subheader Reflection Actions:**
+  - **Daily Mindful Tip Link:** Anchored on the left of the Focus subheader, linking directly to the Tip View (`Today's tip about [topic] →`). Topics rotate on a 24-hour cycle (*e.g., shame, anxiety, overwhelm, resistance, perfectionism*).
+  - **Completed History Access Point:** Rather than cluttering the top navigation bar, completed history is accessed directly via a quiet counter pill in the Focus subheader (`{N} goals completed · View all →`). Placing both actions in the subheader row outside the grid preserves exactly 3 cards on both desktop (1x3 horizontal) and mobile (3x1 vertical stack).
 
 ---
 
@@ -30,12 +32,10 @@ src/
 
 ## 🃏 GoalCard (`src/components/GoalCard.tsx`)
 
-### 1. Header & Branding
-- **Accent Numeral:** Large italic serif numerals (`01`, `02`, `03`) styled with `font-serif-accent text-[#DA7756]/80 italic`.
-- **Status Indicator:** Displays uppercase label `CURRENT GOAL` or `COMPLETED`.
-- **Card Trash Can Icon:**
-  - Placed at the top right of the card.
-  - **Behavior:** Clicking the trash icon **only wipes the card contents back to blank** (`title: ''`, `isCompleted: false`). It never removes the card slot.
+### 1. Header & Actions
+- **Left Action Icon (Edit / Pencil):** Appears on the left whenever a card has content (both single goals and multiple sub-goals). While actively editing, it morphs into a tactile Check icon for quick one-click completion.
+- **Centered Accent Numeral:** Large italic serif numerals (`01`, `02`, `03`) styled with `font-serif-accent text-[#DA7756]/80 italic`, centered at the top of the card.
+- **Right Action Icon (Card Trash Can):** Placed on the far right. Wipes the card contents back to blank (`title: ''`, `isCompleted: false`) without removing the permanent slot fixture.
 
 ### 2. Auto-Resizing Text Area & Sub-Goals Separator (`//`)
 - When active, an unbordered, background-blended textarea expands smoothly as the user types multi-line goals (`scrollHeight` measurement via `useEffect`).

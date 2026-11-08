@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Goal, AppState, ActiveView } from './types';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Lightbulb } from 'lucide-react';
 import { Header } from './components/Header';
 import { GoalCard } from './components/GoalCard';
 import { CompletedView } from './components/CompletedView';
@@ -12,6 +12,27 @@ import { SettingsView, getStoredSettings } from './components/SettingsView';
 import { syncScheduledReminders } from './utils/notifications';
 
 const STORAGE_KEY = 'the_three_things_app_state_v3';
+
+// Rotating daily mindful tip topics (24-hour cycle)
+const TIP_TOPICS = [
+  'shame',
+  'anxiety',
+  'overwhelm',
+  'resistance',
+  'perfectionism',
+  'momentum',
+  'burnout',
+];
+
+const getTodaysTipTopic = (): string => {
+  const now = new Date();
+  const dayIndex = Math.floor(
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / (1000 * 60 * 60 * 24)
+  );
+  return TIP_TOPICS[Math.abs(dayIndex) % TIP_TOPICS.length];
+};
+
+const MAIN_TABS: ActiveView[] = ['focus', 'painpoints', 'media', 'health', 'settings'];
 
 const defaultGoals: Goal[] = [
   {
@@ -46,6 +67,7 @@ const ensureThreeGoals = (goals: Goal[]): Goal[] => {
 
 export const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ActiveView>('focus');
+  const todayTipTopic = useMemo(() => getTodaysTipTopic(), []);
 
   const [state, setState] = useState<AppState>(() => {
     try {
@@ -179,6 +201,164 @@ export const App: React.FC = () => {
     }));
   };
 
+  const activeTabIndex = MAIN_TABS.indexOf(activeView);
+  const carouselTrackRef = useRef<HTMLDivElement>(null);
+  const touchStateRef = useRef<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    startTime: number;
+    lock: 'undecided' | 'horizontal' | 'vertical' | 'ignored';
+  } | null>(null);
+
+  // Sync carousel track transform whenever activeTabIndex updates (e.g. from navbar clicks or links)
+  useEffect(() => {
+    if (carouselTrackRef.current && activeTabIndex >= 0) {
+      carouselTrackRef.current.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
+      carouselTrackRef.current.style.transform = `translateX(-${activeTabIndex * 100}%)`;
+    }
+  }, [activeTabIndex]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Only single touch
+    if (e.touches.length !== 1) {
+      touchStateRef.current = null;
+      return;
+    }
+
+    const touch = e.touches[0];
+    const target = e.target as HTMLElement | null;
+
+    // Strict guard against sliders, drag handles, text inputs
+    if (
+      target &&
+      target.closest(
+        'input, textarea, select, [type="range"], [data-no-swipe="true"], [role="slider"]'
+      )
+    ) {
+      touchStateRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        currentX: touch.clientX,
+        startTime: Date.now(),
+        lock: 'ignored',
+      };
+      return;
+    }
+
+    touchStateRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      currentX: touch.clientX,
+      startTime: Date.now(),
+      lock: 'undecided',
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const state = touchStateRef.current;
+    if (!state || state.lock === 'ignored' || state.lock === 'vertical') {
+      return;
+    }
+
+    if (e.touches.length !== 1) {
+      state.lock = 'ignored';
+      if (carouselTrackRef.current && activeTabIndex >= 0) {
+        carouselTrackRef.current.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+        carouselTrackRef.current.style.transform = `translateX(-${activeTabIndex * 100}%)`;
+      }
+      return;
+    }
+
+    const touch = e.touches[0];
+    state.currentX = touch.clientX;
+    const deltaX = touch.clientX - state.startX;
+    const deltaY = touch.clientY - state.startY;
+
+    // Disambiguation
+    if (state.lock === 'undecided') {
+      const distance = Math.hypot(deltaX, deltaY);
+      if (distance > 8) {
+        // If vertical movement is dominant, lock to vertical scroll so page scrolling is completely natural
+        if (Math.abs(deltaY) >= Math.abs(deltaX) * 0.85) {
+          state.lock = 'vertical';
+          return;
+        } else if (Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+          state.lock = 'horizontal';
+          // Disable CSS transitions during active drag for instant 1:1 response
+          if (carouselTrackRef.current) {
+            carouselTrackRef.current.style.transition = 'none';
+          }
+        }
+      }
+    }
+
+    if (state.lock === 'horizontal' && carouselTrackRef.current && activeTabIndex >= 0) {
+      let offset = deltaX;
+      // Overdrag rubberbanding at outer boundaries
+      if (
+        (activeTabIndex === 0 && deltaX > 0) ||
+        (activeTabIndex === MAIN_TABS.length - 1 && deltaX < 0)
+      ) {
+        offset = deltaX * 0.25;
+      }
+
+      carouselTrackRef.current.style.transform = `translateX(calc(-${activeTabIndex * 100}% + ${offset}px))`;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const state = touchStateRef.current;
+    touchStateRef.current = null;
+
+    if (!state || state.lock !== 'horizontal') {
+      return;
+    }
+
+    const touch = e.changedTouches[0];
+    const finalX = touch ? touch.clientX : state.currentX;
+    const deltaX = finalX - state.startX;
+    const deltaTime = Math.max(1, Date.now() - state.startTime);
+    const velocity = deltaX / deltaTime; // px/ms
+
+    const track = carouselTrackRef.current;
+    if (!track || activeTabIndex < 0) return;
+
+    // Restore smooth spring animation
+    track.style.transition = 'transform 0.32s cubic-bezier(0.25, 1, 0.5, 1)';
+
+    const trackWidth = track.clientWidth || window.innerWidth || 360;
+    const commitThreshold = trackWidth * 0.22; // ~22% screen width or brisk flick
+
+    let newIndex = activeTabIndex;
+
+    if (deltaX < -commitThreshold || velocity < -0.35) {
+      // Swiped Left -> advance
+      if (activeTabIndex < MAIN_TABS.length - 1) {
+        newIndex = activeTabIndex + 1;
+      }
+    } else if (deltaX > commitThreshold || velocity > 0.35) {
+      // Swiped Right -> go back
+      if (activeTabIndex > 0) {
+        newIndex = activeTabIndex - 1;
+      }
+    }
+
+    // Set position and active view
+    track.style.transform = `translateX(-${newIndex * 100}%)`;
+    if (newIndex !== activeTabIndex) {
+      setActiveView(MAIN_TABS[newIndex]);
+    }
+  };
+
+  const handleTouchCancel = () => {
+    touchStateRef.current = null;
+    if (carouselTrackRef.current && activeTabIndex >= 0) {
+      carouselTrackRef.current.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+      carouselTrackRef.current.style.transform = `translateX(-${activeTabIndex * 100}%)`;
+    }
+  };
+
   return (
     <div className="h-screen w-screen flex flex-col justify-between bg-[#FAF7F2] text-[#2D2A26] overflow-hidden select-none">
       {/* Top Header with View Switcher */}
@@ -188,67 +368,105 @@ export const App: React.FC = () => {
         completedCount={state.completedHistory.length}
       />
 
-      {/* Conditional View Rendering */}
-      {activeView === 'focus' ? (
-        /* Main Focus Screen Content: Fixed 3 Goal Cards */
-        <main className="flex-1 min-h-0 px-4 md:px-8 py-4 md:py-6 flex flex-col justify-start md:justify-center max-w-7xl w-full mx-auto overflow-y-auto md:overflow-hidden">
-          {/* Section Subtitle & Completed Counter */}
-          <div className="flex items-center justify-between mb-4 px-2">
-            <p className="text-xs uppercase tracking-widest text-[#78716A] font-semibold">
-              Today's 3 Things
-            </p>
-            <button
-              onClick={() => setActiveView('completed')}
-              className="group inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E6DFD5]/40 hover:bg-[#E6DFD5]/80 border border-[#E6DFD5] text-xs text-[#78716A] hover:text-[#2D2A26] transition-all cursor-pointer shadow-2xs hover:shadow-xs"
-              title="View all completed goals in history"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#6E8B74]" />
-              <span className="font-medium">
-                <strong className="font-semibold text-[#2D2A26]">{state.completedHistory.length}</strong>{' '}
-                {state.completedHistory.length === 1 ? 'goal' : 'goals'} completed
-              </span>
-              <span className="text-[#DA7756] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                · View all →
-              </span>
-            </button>
-          </div>
-
-          {/* Fixed 3 Goal Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-[calc(100%-2rem)] items-stretch">
-            {state.goals.map((goal, idx) => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                index={idx}
-                onUpdateGoal={handleUpdateGoal}
-                onCompleteGoal={handleCompleteGoal}
-                onClearGoal={handleClearGoal}
-              />
-            ))}
-          </div>
-        </main>
-      ) : activeView === 'completed' ? (
-        /* Completed History Screen */
+      {/* View Rendering: Sub-views (Completed & Tip) or 1:1 Interactive Main Carousel */}
+      {activeView === 'completed' ? (
         <CompletedView
           completedHistory={state.completedHistory}
           onDeleteCompletedGoal={handleDeleteCompletedGoal}
           onBackToFocus={() => setActiveView('focus')}
         />
-      ) : activeView === 'painpoints' ? (
-        /* Pain Points Screen */
-        <PainPointsView />
-      ) : activeView === 'media' ? (
-        /* Media Screen */
-        <MediaView />
-      ) : activeView === 'health' ? (
-        /* Health Screen */
-        <HealthView />
       ) : activeView === 'tip' ? (
-        /* Tip Placeholder Screen */
-        <TipView />
+        <TipView
+          onBackToFocus={() => setActiveView('focus')}
+          topic={todayTipTopic}
+        />
       ) : (
-        /* Settings Screen */
-        <SettingsView />
+        <div
+          className="flex-1 min-h-0 w-full overflow-hidden relative"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
+        >
+          <div
+            ref={carouselTrackRef}
+            className="flex h-full w-full will-change-transform"
+            style={{
+              transform: `translateX(-${Math.max(0, activeTabIndex) * 100}%)`,
+              transition: 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)',
+            }}
+          >
+            {/* Page 0: Focus View */}
+            <div className="w-full h-full flex-shrink-0 overflow-hidden flex flex-col">
+              <main className="flex-1 min-h-0 px-4 md:px-8 py-4 md:py-6 flex flex-col justify-start md:justify-center max-w-7xl w-full mx-auto overflow-y-auto md:overflow-hidden">
+                {/* Section Subheader: Daily Tip Link & Completed Counter */}
+                <div className="flex items-center justify-between mb-4 px-2 flex-wrap gap-2">
+                  <button
+                    onClick={() => setActiveView('tip')}
+                    className="group inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E6DFD5]/40 hover:bg-[#E6DFD5]/80 border border-[#E6DFD5] text-xs text-[#78716A] hover:text-[#2D2A26] transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                    title="Read today's mindful tip"
+                  >
+                    <Lightbulb className="w-3.5 h-3.5 text-[#DA7756]" />
+                    <span className="font-medium">
+                      Today's tip about <strong className="font-semibold text-[#2D2A26]">{todayTipTopic}</strong>
+                    </span>
+                    <span className="text-[#DA7756] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                      →
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setActiveView('completed')}
+                    className="group inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E6DFD5]/40 hover:bg-[#E6DFD5]/80 border border-[#E6DFD5] text-xs text-[#78716A] hover:text-[#2D2A26] transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                    title="View all completed goals in history"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#6E8B74]" />
+                    <span className="font-medium">
+                      <strong className="font-semibold text-[#2D2A26]">{state.completedHistory.length}</strong>{' '}
+                      {state.completedHistory.length === 1 ? 'goal' : 'goals'} completed
+                    </span>
+                    <span className="text-[#DA7756] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                      · View all →
+                    </span>
+                  </button>
+                </div>
+
+                {/* Fixed 3 Goal Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-[calc(100%-2rem)] items-stretch">
+                  {state.goals.map((goal, idx) => (
+                    <GoalCard
+                      key={goal.id}
+                      goal={goal}
+                      index={idx}
+                      onUpdateGoal={handleUpdateGoal}
+                      onCompleteGoal={handleCompleteGoal}
+                      onClearGoal={handleClearGoal}
+                    />
+                  ))}
+                </div>
+              </main>
+            </div>
+
+            {/* Page 1: Points View (Pain Points & Media Desires) */}
+            <div className="w-full h-full flex-shrink-0 overflow-hidden flex flex-col">
+              <PainPointsView onNavigate={setActiveView} />
+            </div>
+
+            {/* Page 2: Media View */}
+            <div className="w-full h-full flex-shrink-0 overflow-hidden flex flex-col">
+              <MediaView />
+            </div>
+
+            {/* Page 3: Health View */}
+            <div className="w-full h-full flex-shrink-0 overflow-hidden flex flex-col">
+              <HealthView />
+            </div>
+
+            {/* Page 4: Settings View */}
+            <div className="w-full h-full flex-shrink-0 overflow-hidden flex flex-col">
+              <SettingsView />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

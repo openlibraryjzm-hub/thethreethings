@@ -1,15 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mountain, Plus, Sparkles, Cloud, Trash2, Check, MoveDiagonal2 } from 'lucide-react';
-import { PainPoint } from '../types';
+import {
+  Mountain,
+  Film,
+  Compass,
+  Hammer,
+  Radio,
+  Rows3,
+  Plus,
+  Sparkles,
+  Cloud,
+  Trash2,
+  Check,
+  MoveDiagonal2,
+} from 'lucide-react';
+import { PainPoint, ActiveView } from '../types';
 
-const STORAGE_KEY = 'the_three_things_pain_points_v5';
+export type CloudMode = 'painpoints' | 'media' | 'adventures' | 'projects' | 'oomf';
+
+const PAINPOINTS_STORAGE_KEY = 'the_three_things_pain_points_v5';
+const MEDIA_STORAGE_KEY = 'the_three_things_media_desires_v1';
+const ADVENTURES_STORAGE_KEY = 'the_three_things_adventures_v1';
+const PROJECTS_STORAGE_KEY = 'the_three_things_projects_v1';
+const OOMF_STORAGE_KEY = 'the_three_things_oomf_v1';
+const MODE_STORAGE_KEY = 'the_three_things_cloud_mode_v1';
+
 const MAX_CHAR_LIMIT = 26;
 const MIN_SCALE = 0.6;
 const MAX_SCALE = 6.0;
 
-// Punchy starter keywords with organic default scale distribution
-const STARTER_WORDS: PainPoint[] = [
+// 1. Pain Points (friction reservoir)
+const STARTER_PAIN_POINTS: PainPoint[] = [
   { id: '1', title: 'Bad Sleep Routine', isCompleted: false, createdAt: 1, scale: 1.25 },
   { id: '2', title: 'Neck & Posture Ache', isCompleted: false, createdAt: 2, scale: 1.0 },
   { id: '3', title: 'Tax Paperwork', isCompleted: false, createdAt: 3, scale: 1.35 },
@@ -17,6 +38,152 @@ const STARTER_WORDS: PainPoint[] = [
   { id: '5', title: 'Dentist Delay', isCompleted: false, createdAt: 5, scale: 1.1 },
   { id: '6', title: 'Garage Boxes', isCompleted: false, createdAt: 6, scale: 0.85 },
   { id: '7', title: 'Screen Time Fatigue', isCompleted: false, createdAt: 7, scale: 1.15 },
+];
+
+// 2. Media Desires (backlog reservoir)
+const STARTER_MEDIA_DESIRES: PainPoint[] = [
+  { id: 'm1', title: 'Sci-Fi Classics', isCompleted: false, createdAt: 1, scale: 1.25 },
+  { id: 'm2', title: 'Cozy Indies', isCompleted: false, createdAt: 2, scale: 1.0 },
+  { id: 'm3', title: 'Elden Ring DLC', isCompleted: false, createdAt: 3, scale: 1.35 },
+  { id: 'm4', title: 'Studio Ghibli', isCompleted: false, createdAt: 4, scale: 0.95 },
+  { id: 'm5', title: 'Cyberpunk Anime', isCompleted: false, createdAt: 5, scale: 1.15 },
+  { id: 'm6', title: 'Metroidvanias', isCompleted: false, createdAt: 6, scale: 0.85 },
+  { id: 'm7', title: 'Philosophy Non-Fiction', isCompleted: false, createdAt: 7, scale: 1.1 },
+];
+
+// 3. IRL Adventures (trips, hikes, spots)
+const STARTER_ADVENTURES: PainPoint[] = [
+  { id: 'a1', title: 'Coastal Ridge Hike', isCompleted: false, createdAt: 1, scale: 1.25 },
+  { id: 'a2', title: 'Kyoto Trip', isCompleted: false, createdAt: 2, scale: 1.35 },
+  { id: 'a3', title: 'Camping Weekend', isCompleted: false, createdAt: 3, scale: 1.0 },
+  { id: 'a4', title: 'Night Food Market', isCompleted: false, createdAt: 4, scale: 0.95 },
+  { id: 'a5', title: 'Kayaking in the Bay', isCompleted: false, createdAt: 5, scale: 1.15 },
+  { id: 'a6', title: 'Hot Springs Retreat', isCompleted: false, createdAt: 6, scale: 0.85 },
+  { id: 'a7', title: 'Scenic Train Route', isCompleted: false, createdAt: 7, scale: 1.1 },
+];
+
+// 4. Projects (side & passion projects)
+const STARTER_PROJECTS: PainPoint[] = [
+  { id: 'p1', title: 'Portfolio Redesign', isCompleted: false, createdAt: 1, scale: 1.25 },
+  { id: 'p2', title: 'Custom Mechanical Board', isCompleted: false, createdAt: 2, scale: 1.0 },
+  { id: 'p3', title: 'Woodworking Desk Build', isCompleted: false, createdAt: 3, scale: 1.35 },
+  { id: 'p4', title: 'Indie Game Prototype', isCompleted: false, createdAt: 4, scale: 1.15 },
+  { id: 'p5', title: 'Podcast Setup', isCompleted: false, createdAt: 5, scale: 0.9 },
+  { id: 'p6', title: 'Recipe Zine', isCompleted: false, createdAt: 6, scale: 0.85 },
+  { id: 'p7', title: 'Open Source CLI Tool', isCompleted: false, createdAt: 7, scale: 1.1 },
+];
+
+// 5. OOMF (channels, playlists, music aided by oomfs.tv & oomfit)
+const STARTER_OOMF: PainPoint[] = [
+  { id: 'o1', title: 'Deep Work Ambient', isCompleted: false, createdAt: 1, scale: 1.25 },
+  { id: 'o2', title: 'Video Essay Channels', isCompleted: false, createdAt: 2, scale: 1.15 },
+  { id: 'o3', title: 'City Pop Nightdrive', isCompleted: false, createdAt: 3, scale: 1.35 },
+  { id: 'o4', title: 'Tech Philosophy', isCompleted: false, createdAt: 4, scale: 0.95 },
+  { id: 'o5', title: 'Late Night Synthwave', isCompleted: false, createdAt: 5, scale: 1.1 },
+  { id: 'o6', title: 'Lo-Fi Coding Beats', isCompleted: false, createdAt: 6, scale: 1.0 },
+  { id: 'o7', title: 'Acoustic Guitar Sets', isCompleted: false, createdAt: 7, scale: 0.85 },
+];
+
+interface ModeConfig {
+  id: CloudMode;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tooltip: string;
+  bannerTitle: string;
+  bannerDesc: React.ReactNode;
+  placeholder: string;
+  emptyText: string;
+  companionView: ActiveView;
+  companionLabel: string;
+  companionIcon: React.ComponentType<{ className?: string }>;
+}
+
+const MODES: ModeConfig[] = [
+  {
+    id: 'painpoints',
+    label: 'Pain Points',
+    icon: Mountain,
+    tooltip: 'Friction & long-term pain points',
+    bannerTitle: 'Friction word cloud:',
+    bannerDesc: (
+      <>
+        Short keywords of what is nagging or bothering you right now. Glance at this cloud when picking today's <strong>3 Focus goals</strong>.
+      </>
+    ),
+    placeholder: 'Name a friction keyword (e.g. Neck Ache, Tax Delay)...',
+    emptyText: 'Your friction cloud is clear. Type short keywords above to add.',
+    companionView: 'focus',
+    companionLabel: 'Focus View →',
+    companionIcon: Rows3,
+  },
+  {
+    id: 'media',
+    label: 'Media Desires',
+    icon: Film,
+    tooltip: 'Media backlog & wishlist desires',
+    bannerTitle: 'Media desires cloud:',
+    bannerDesc: (
+      <>
+        Spatial reference of favorite genres, anticipated games, shows, or books. Glance here when curating your <strong>Weekly Media card</strong>.
+      </>
+    ),
+    placeholder: 'Name a media desire (e.g. Cozy Indies, Elden Ring, Sci-Fi)...',
+    emptyText: 'Your media desires cloud is clear. Type genres, games, or titles above to add.',
+    companionView: 'media',
+    companionLabel: 'Media View →',
+    companionIcon: Film,
+  },
+  {
+    id: 'adventures',
+    label: 'IRL Adventures',
+    icon: Compass,
+    tooltip: 'Real-world adventures, trips, hikes & spots',
+    bannerTitle: 'Adventure reservoir:',
+    bannerDesc: (
+      <>
+        Places to visit, trails to hike, trips to take, and real-world experiences. Pull into your <strong>Focus goals</strong> when planning your weekend.
+      </>
+    ),
+    placeholder: 'Name an adventure (e.g. Coastal Hike, Kyoto Trip)...',
+    emptyText: 'Your adventure cloud is clear. Type trips, spots, or hikes above to add.',
+    companionView: 'focus',
+    companionLabel: 'Focus View →',
+    companionIcon: Rows3,
+  },
+  {
+    id: 'projects',
+    label: 'Projects',
+    icon: Hammer,
+    tooltip: 'Side projects, builds & creative ideas',
+    bannerTitle: 'Side projects reservoir:',
+    bannerDesc: (
+      <>
+        A spatial holding space for side projects, passion ideas, and creative endeavors. Pull actionable steps into your <strong>Focus goals</strong>.
+      </>
+    ),
+    placeholder: 'Name a project (e.g. Portfolio v2, Woodworking Desk)...',
+    emptyText: 'Your project cloud is clear. Type builds or ideas above to add.',
+    companionView: 'focus',
+    companionLabel: 'Focus View →',
+    companionIcon: Rows3,
+  },
+  {
+    id: 'oomf',
+    label: 'OOMF',
+    icon: Radio,
+    tooltip: 'Channels, playlists & music curation',
+    bannerTitle: 'OOMF curation:',
+    bannerDesc: (
+      <>
+        Curation of standout channels, playlists, streamers, and music — aided by <strong>oomfs.tv</strong> and <strong>oomfit</strong>.
+      </>
+    ),
+    placeholder: 'Name an OOMF item (e.g. Deep Work Ambient, Tech Essays)...',
+    emptyText: 'Your OOMF cloud is clear. Type channels, playlists, or music above to add.',
+    companionView: 'media',
+    companionLabel: 'Media View →',
+    companionIcon: Film,
+  },
 ];
 
 // Typographic palette variations with base REM sizing for fluid scaling
@@ -159,7 +326,6 @@ const PainPointWord: React.FC<PainPointWordProps> = ({
 
     const onPointerMove = (moveEvt: PointerEvent) => {
       moveEvt.preventDefault();
-      // Outward drag (right or up) expands, inward drag shrinks
       const deltaX = moveEvt.clientX - startX;
       const deltaY = startY - moveEvt.clientY;
       const delta = (deltaX + deltaY) / 60;
@@ -237,6 +403,7 @@ const PainPointWord: React.FC<PainPointWordProps> = ({
       {isActive && !isRemoveMode && (
         <div
           onPointerDown={handleDragStart}
+          data-no-swipe="true"
           className="ml-1.5 p-1 rounded-full bg-[#DA7756] text-white cursor-nwse-resize touch-none shadow-2xs hover:scale-110 active:scale-95 transition-transform shrink-0"
           title="Drag horizontally or diagonally to resize"
           aria-label="Drag to resize word"
@@ -248,18 +415,50 @@ const PainPointWord: React.FC<PainPointWordProps> = ({
   );
 };
 
-export const PainPointsView: React.FC = () => {
-  const [items, setItems] = useState<PainPoint[]>(() => {
+interface PainPointsViewProps {
+  onNavigate?: (view: ActiveView) => void;
+}
+
+export const PainPointsView: React.FC<PainPointsViewProps> = ({ onNavigate }) => {
+  const [mode, setMode] = useState<CloudMode>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+      const savedMode = localStorage.getItem(MODE_STORAGE_KEY) as CloudMode | null;
+      if (
+        savedMode === 'painpoints' ||
+        savedMode === 'media' ||
+        savedMode === 'adventures' ||
+        savedMode === 'projects' ||
+        savedMode === 'oomf'
+      ) {
+        return savedMode;
       }
     } catch (e) {
-      console.error('Failed to load pain points cloud', e);
+      console.error('Failed to load cloud mode', e);
     }
-    return STARTER_WORDS;
+    return 'painpoints';
+  });
+
+  const [clouds, setClouds] = useState<Record<CloudMode, PainPoint[]>>(() => {
+    const loadCloud = (key: string, starters: PainPoint[]): PainPoint[] => {
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {
+        console.error(`Failed to load ${key}`, e);
+      }
+      return starters;
+    };
+
+    return {
+      painpoints: loadCloud(PAINPOINTS_STORAGE_KEY, STARTER_PAIN_POINTS),
+      media: loadCloud(MEDIA_STORAGE_KEY, STARTER_MEDIA_DESIRES),
+      adventures: loadCloud(ADVENTURES_STORAGE_KEY, STARTER_ADVENTURES),
+      projects: loadCloud(PROJECTS_STORAGE_KEY, STARTER_PROJECTS),
+      oomf: loadCloud(OOMF_STORAGE_KEY, STARTER_OOMF),
+    };
   });
 
   const [inputVal, setInputVal] = useState('');
@@ -269,14 +468,50 @@ export const PainPointsView: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const chamberRef = useRef<HTMLDivElement>(null);
 
-  // Sync to localStorage
+  // Sync each cloud independently to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      localStorage.setItem(PAINPOINTS_STORAGE_KEY, JSON.stringify(clouds.painpoints));
+      localStorage.setItem(MEDIA_STORAGE_KEY, JSON.stringify(clouds.media));
+      localStorage.setItem(ADVENTURES_STORAGE_KEY, JSON.stringify(clouds.adventures));
+      localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(clouds.projects));
+      localStorage.setItem(OOMF_STORAGE_KEY, JSON.stringify(clouds.oomf));
     } catch (e) {
-      console.error('Failed to save pain points cloud', e);
+      console.error('Failed to save clouds to localStorage', e);
     }
-  }, [items]);
+  }, [clouds]);
+
+  // Sync active mode to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(MODE_STORAGE_KEY, mode);
+    } catch (e) {
+      console.error('Failed to save cloud mode', e);
+    }
+  }, [mode]);
+
+  const items = clouds[mode] || [];
+
+  const setItems = (action: React.SetStateAction<PainPoint[]>) => {
+    setClouds((prev) => {
+      const nextItems = typeof action === 'function' ? action(prev[mode]) : action;
+      return {
+        ...prev,
+        [mode]: nextItems,
+      };
+    });
+  };
+
+  const currentConfig = MODES.find((m) => m.id === mode) || MODES[0];
+
+  const handleSwitchMode = (newMode: CloudMode) => {
+    if (newMode === mode) return;
+    setActiveWordId(null);
+    setIsRemoveMode(false);
+    setSelectedIds(new Set());
+    setInputVal('');
+    setMode(newMode);
+  };
 
   // Chamber-level pinch gesture support when a word is active
   useEffect(() => {
@@ -337,14 +572,15 @@ export const PainPointsView: React.FC = () => {
     const trimmed = inputVal.trim();
     if (!trimmed) return;
 
-    // Check duplicate
+    // Check duplicate in current cloud
     if (items.some((i) => i.title.toLowerCase() === trimmed.toLowerCase())) {
       setInputVal('');
       return;
     }
 
+    const prefix = mode === 'painpoints' ? 'pain' : mode;
     const newItem: PainPoint = {
-      id: `pain-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: trimmed,
       isCompleted: false,
       createdAt: Date.now(),
@@ -423,24 +659,65 @@ export const PainPointsView: React.FC = () => {
 
   return (
     <main className="flex-1 min-h-0 px-4 md:px-8 py-3.5 md:py-6 max-w-3xl w-full mx-auto overflow-y-auto custom-scrollbar select-none flex flex-col justify-start">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between mb-3 px-1 shrink-0">
-        <div className="flex items-center gap-2">
-          <Mountain className="w-5 h-5 text-[#DA7756]" />
-          <h1 className="text-xl md:text-2xl font-serif-accent italic font-bold text-[#2D2A26] tracking-tight">
-            Pain Points Cloud
-          </h1>
+      {/* Top Header & 5-Mode Navigation Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 mb-3 px-1 shrink-0">
+        {/* Mode Switcher Segmented Control (Active tab shows label, inactive show icons) */}
+        <div className="flex items-center gap-2 max-w-full overflow-hidden">
+          <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar p-1 rounded-2xl bg-[#E6DFD5]/60 border border-[#E6DFD5] shadow-2xs max-w-full">
+            {MODES.map((m) => {
+              const isSelected = mode === m.id;
+              const Icon = m.icon;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => handleSwitchMode(m.id)}
+                  aria-label={m.label}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-white text-[#2D2A26] shadow-xs px-3 shrink-0'
+                      : 'text-[#78716A] hover:text-[#2D2A26] hover:bg-white/40 px-2.5'
+                  }`}
+                  title={m.tooltip}
+                >
+                  <Icon className="w-3.5 h-3.5 text-[#DA7756] shrink-0" />
+                  <AnimatePresence initial={false}>
+                    {isSelected && (
+                      <motion.span
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: 'auto' }}
+                        exit={{ opacity: 0, width: 0 }}
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
+                        className="overflow-hidden whitespace-nowrap"
+                      >
+                        {m.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#E6DFD5]/50 text-[#78716A] border border-[#E6DFD5]">
-            {items.length} {items.length === 1 ? 'word' : 'words'}
-          </span>
+        {/* Right Action Cluster: Companion View Link Button and Removal Action */}
+        <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap shrink-0">
+          {onNavigate && (
+            <button
+              type="button"
+              onClick={() => onNavigate(currentConfig.companionView)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-white hover:bg-[#F5F0E8] text-[#DA7756] border border-[#E6DFD5] shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap"
+              title={`Open ${currentConfig.companionLabel}`}
+            >
+              <currentConfig.companionIcon className="w-3.5 h-3.5 text-[#DA7756]" />
+              <span>{currentConfig.companionLabel}</span>
+            </button>
+          )}
 
           {items.length > 0 && (
             <button
               onClick={handleToggleRemoveMode}
-              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                 isRemoveMode
                   ? 'bg-[#DA7756] text-white border-[#DA7756] shadow-2xs'
                   : 'bg-white hover:bg-[#F5F0E8] text-[#78716A] hover:text-[#2D2A26] border-[#E6DFD5]'
@@ -454,12 +731,13 @@ export const PainPointsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Mindful Purpose Subtitle */}
+      {/* Mindful Purpose Subtitle Banner */}
       <div className="rounded-2xl p-3 md:p-3.5 bg-[#F5F0E8]/80 border border-[#E6DFD5] mb-3.5 shadow-2xs shrink-0">
         <div className="flex items-start gap-2">
           <Sparkles className="w-3.5 h-3.5 text-[#DA7756] shrink-0 mt-0.5" />
           <p className="text-[11px] md:text-xs text-[#78716A] leading-relaxed">
-            <strong className="text-[#2D2A26] font-semibold">Friction word cloud:</strong> Short keywords of what is nagging or bothering you right now. Glance at this cloud when picking today's <strong>3 Focus goals</strong>.
+            <strong className="text-[#2D2A26] font-semibold">{currentConfig.bannerTitle} </strong>
+            {currentConfig.bannerDesc}
           </p>
         </div>
       </div>
@@ -523,7 +801,7 @@ export const PainPointsView: React.FC = () => {
             maxLength={MAX_CHAR_LIMIT}
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
-            placeholder="Name a friction keyword (e.g. Neck Ache, Tax Delay)..."
+            placeholder={currentConfig.placeholder}
             className="flex-1 text-xs md:text-sm text-[#2D2A26] placeholder-[#78716A]/50 outline-none bg-transparent"
           />
 
@@ -539,7 +817,7 @@ export const PainPointsView: React.FC = () => {
           <button
             type="submit"
             disabled={!inputVal.trim()}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#DA7756] hover:bg-[#C86446] disabled:opacity-40 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#DA7756] hover:bg-[#C86446] disabled:opacity-40 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Add</span>
@@ -556,7 +834,7 @@ export const PainPointsView: React.FC = () => {
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center p-6 pointer-events-none">
             <Cloud className="w-8 h-8 text-[#78716A]/40 mb-2" />
-            <p className="text-xs text-[#78716A]">Your cloud is clear. Type short keywords above to add.</p>
+            <p className="text-xs text-[#78716A]">{currentConfig.emptyText}</p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
@@ -586,7 +864,7 @@ export const PainPointsView: React.FC = () => {
             exit={{ opacity: 0, y: 8, height: 0 }}
             className="overflow-hidden mt-3 shrink-0"
           >
-            <div className="p-2.5 px-3.5 sm:px-4 rounded-2xl bg-white border border-[#E6DFD5] shadow-xs flex items-center justify-between gap-2 sm:gap-3">
+            <div data-no-swipe="true" className="p-2.5 px-3.5 sm:px-4 rounded-2xl bg-white border border-[#E6DFD5] shadow-xs flex items-center justify-between gap-2 sm:gap-3">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-xs font-serif-accent italic font-bold text-[#DA7756] truncate max-w-[110px] sm:max-w-[160px]">
                   "{activeWord.title}"

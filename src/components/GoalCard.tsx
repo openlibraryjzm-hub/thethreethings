@@ -127,8 +127,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({
   const indexLabel = String(index + 1).padStart(2, '0');
   const placeholderText = PLACEHOLDERS[index % PLACEHOLDERS.length];
 
-  // Show textarea when no sub-goals exist, or when actively editing/focused
-  const shouldShowTextarea = !hasSubGoals || isEditing || isFocused;
+  // Show textarea when no title exists, or when actively editing/focused
+  const shouldShowTextarea = !goal.title.trim() || isEditing || isFocused;
 
   // Determine slide to complete parameters: always enabled by default if text exists
   const isSliderDisabled = !goal.title.trim();
@@ -155,31 +155,44 @@ export const GoalCard: React.FC<GoalCardProps> = ({
       }`}
     >
       {/* Top Card Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-3xl font-serif-accent font-bold text-[#DA7756]/80 italic">
-            {indexLabel}
-          </span>
-          <span className="text-xs uppercase tracking-wider font-semibold text-[#78716A]/70">
-            {goal.isCompleted ? 'Completed' : 'Current Goal'}
-          </span>
+      <div className="relative flex items-center justify-between min-h-[36px]">
+        {/* Left Action Icon: Edit/Pencil */}
+        <div className="flex items-center z-10 min-w-[36px]">
+          {!goal.isCompleted && goal.title.trim() && (
+            shouldShowTextarea ? (
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleDoneTyping}
+                className="p-2 -ml-2 text-[#DA7756] hover:bg-[#FAF7F2] rounded-2xl transition-colors cursor-pointer"
+                title="Done editing"
+              >
+                <Check className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleStartEditing}
+                className="p-2 -ml-2 text-[#78716A]/50 hover:text-[#DA7756] hover:bg-[#FAF7F2] rounded-2xl transition-colors cursor-pointer"
+                title="Edit goal text"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            )
+          )}
         </div>
 
-        <div className="flex items-center gap-1">
-          {/* Header pencil button: alternative 1-click edit option */}
-          {hasSubGoals && !goal.isCompleted && !shouldShowTextarea && (
-            <button
-              onClick={handleStartEditing}
-              className="p-2 text-[#78716A]/50 hover:text-[#DA7756] hover:bg-[#FAF7F2] rounded-2xl transition-colors cursor-pointer"
-              title="Edit goal text"
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
-          )}
+        {/* Centered Orange Index Number */}
+        <span className="absolute left-1/2 -translate-x-1/2 text-3xl font-serif-accent font-bold text-[#DA7756]/80 italic select-none pointer-events-none">
+          {indexLabel}
+        </span>
 
+        {/* Right Action Icon: Clear Trash */}
+        <div className="flex items-center z-10 min-w-[36px] justify-end">
           <button
+            type="button"
             onClick={handleClear}
-            className="p-2 text-[#78716A]/50 hover:text-[#DA7756] hover:bg-[#FAF7F2] rounded-2xl transition-colors cursor-pointer"
+            className="p-2 -mr-2 text-[#78716A]/50 hover:text-[#DA7756] hover:bg-[#FAF7F2] rounded-2xl transition-colors cursor-pointer"
             title="Clear card contents"
           >
             <Trash2 className="w-4 h-4" />
@@ -247,7 +260,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
             rows={2}
             className="w-full bg-transparent resize-none border-none outline-none text-xl font-semibold text-[#2D2A26] placeholder-[#78716A]/40 leading-relaxed focus:ring-0"
           />
-        ) : (
+        ) : hasSubGoals ? (
           /* Sub-Goals Text Form: Flowing text with centered floating selection points above */
           <div className="flex flex-wrap items-end gap-y-3 py-2 text-xl font-semibold text-[#2D2A26] leading-relaxed select-none">
             {subGoals.map((subGoal, idx) => {
@@ -293,6 +306,13 @@ export const GoalCard: React.FC<GoalCardProps> = ({
                 </React.Fragment>
               );
             })}
+          </div>
+        ) : (
+          /* Single Goal Clean Display */
+          <div className="py-2 select-none">
+            <p className="text-xl font-semibold text-[#2D2A26] leading-relaxed break-words">
+              {goal.title}
+            </p>
           </div>
         )}
       </div>

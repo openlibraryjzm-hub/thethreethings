@@ -53,29 +53,30 @@ The app uses warm, earthy paper tones to minimize eye strain and evoke physical 
 ```
 the-three-things/
 ├── docs/
-│   ├── FOCUS_VIEW.md          # In-depth guide: 3 permanent slots, slide-to-complete, sound & confetti
+│   ├── FOCUS_VIEW.md          # In-depth guide: 3 permanent slots, subheader actions (tips & history), slide-to-complete
 │   ├── COMPLETED_VIEW.md      # In-depth guide: history archive, filtering, calendar popover, pagination
-│   └── MEDIA.md               # In-depth guide: 4 stacked cards, terminal counter, image compression
+│   └── MEDIA.md               # In-depth guide: Saturday–Friday weekly media, rectangular slots, all-weeks archive
 ├── src/
 │   ├── components/
-│   │   ├── Header.tsx         # Top bar with logo, "One day at a time" badge, and view tabs
-│   │   ├── GoalCard.tsx       # Focus screen 3-card grid item with auto-resizing input
+│   │   ├── Header.tsx         # Top bar with adaptive expanding tab labels and right-aligned desk-pad controls
+│   │   ├── GoalCard.tsx       # Focus screen 3-card grid item with auto-resizing input, edit icon, and sub-goals (//)
 │   │   ├── SlideToComplete.tsx# Tactile slide knob preventing accidental completions
 │   │   ├── CalendarPopover.tsx# In-app calendar popover with accomplishment activity dots
 │   │   ├── CompletedView.tsx  # Completed history page with filtering and 50/page pagination
-│   │   ├── PainPointsView.tsx # Physics-based stone cairn stack for persistent life pain points
+│   │   ├── PainPointsView.tsx # 5-mode spatial word cloud reservoir (friction, media, adventures, projects, oomf)
+│   │   ├── MediaView.tsx      # Saturday–Friday weekly media curation, rectangular slots, and all-weeks timeline
 │   │   ├── HealthView.tsx     # Health screen with dynamic time greeting & untracked care reminders
-│   │   ├── TipView.tsx        # Mindful focus tips and guidance
+│   │   ├── TipView.tsx        # Mindful focus tips and guidance (accessed via Focus subheader link)
 │   │   └── SettingsView.tsx   # Settings screen with focus reminder cadences & backup
 │   ├── utils/
 │   │   ├── sound.ts           # Web Audio API harmonic chime & tactile stamp sound effect
 │   │   ├── confetti.ts        # Celebration confetti with warm color tokens
 │   │   └── notifications.ts   # On-device Capacitor local notification queue & channel
 │   ├── types/
-│   │   └── index.ts           # TypeScript definitions for Goal, AppState, and ActiveView
+│   │   └── index.ts           # TypeScript definitions for Goal, AppState, ActiveView, WeeklyMediaCard
 │   ├── styles/
 │   │   └── globals.css        # Tailwind CSS imports, color tokens, and custom scrollbar
-│   ├── App.tsx                # Root state management, persistence, and view switching
+│   ├── App.tsx                # Root state, 1:1 touch drag carousel, and view distribution
 │   └── main.tsx               # Application entry point
 ├── src-tauri/                 # Tauri v2 native desktop configuration & Rust files
 ├── package.json               # NPM scripts & dependencies
@@ -130,16 +131,19 @@ For detailed functional specifications and component mechanics, refer to the ded
 
 - 🧭 **[Navigation Bar Specification](navbar.md)**
   - Adaptive active label vs. inactive icon-only tab interaction
-  - 6-space hierarchy: Focus, Pain Points, Media, Health, Tip, Settings
-  - Decoupling of completed history access to preserve 3-card grid isolation
+  - 5-space primary hierarchy: Focus, Points, Media, Health, Settings
+  - 1:1 interactive touch drag carousel across screens with cancelable gesture physics and conflict protection (`data-no-swipe="true"`)
+  - Decoupling of completed history & daily tip sub-views to preserve 3-card grid isolation
 - 🔔 **[Notification System Specification](notification.md)**
   - Quiet on-device focus reminder philosophy and serverless architecture
   - Native Capacitor local notifications, high-importance Android channel, and Doze-mode execution
   - Rolling queue algorithm (40 future alarms) and rotating mindful prompt pool
   - Settings UI: master permission toggle, 5-stop cadence slider (15m, 30m, 45m, 1h, Custom)
 - 🎯 **[Focus View Specification](docs/FOCUS_VIEW.md)**
-  - Fixed 3-card layout rules
+  - Fixed 3-card layout rules (`01`, `02`, `03`)
   - Sub-goal separation (`//`), multi-selection, and partial completion mechanics
+  - Header actions: left pencil edit icon, centered numerals, right card wipe icon
+  - Subheader reflection links: daily mindful tip (left) and completed history counter (right)
   - Slide to Complete drag mechanics and threshold physics
   - Sound synthesis & celebration confetti
   - Post-completion actions ("Reset Goal" vs "New Goal")
@@ -148,15 +152,19 @@ For detailed functional specifications and component mechanics, refer to the ded
   - Timeframe filters: Today, Yesterday, All Time
   - Custom in-app calendar popover with accomplishment activity dots
   - 50-items-per-page pagination and scroll container behavior
-- ⛰️ **[Pain Points Specification](painpoint.md)**
-  - Confined word cloud chamber with organic typographic scaling
+- ⛰️🎬🧭 **[Spatial Word Cloud Specification](painpoint.md)**
+  - 5-mode reference reservoir: Pain Points (friction), Media Desires (backlog), IRL Adventures (offline spots), Projects (side ideas), and OOMF (curated music/feeds)
+  - Direct companion links: Pain Points, Adventures & Projects link to Focus View; Media Desires & OOMF link to Media View
+  - Confined word cloud chamber with organic typographic scaling, 2-finger pinch, and drag resizing
+  - Compact mode switcher: active tab smoothly expands its label while inactive tabs display icons to prevent horizontal mobile truncation
   - Strict 26-character input limit keeping entries punchy and preventing sentence tasks
-  - Quick-glance friction reservoir that feeds directly into the 3 daily Focus goals
-  - Dedicated Remove mode with multi-select and confirmation to dismiss handled friction
+  - Dedicated Remove mode with multi-select and confirmation to dismiss handled keywords
 - 🎬 **[Media View Specification](media.md)**
-  - Curated editorial Monthly Theme card & 4-slot media queue
-  - Enforced locked card dimensions (`h-[230px] md:h-[240px]`) with fixed image frame (`h-[152px] md:h-[162px]`)
-  - Tactile slide-to-complete button with warm confetti and acoustic chime feedback
+  - Saturday–Friday weekly cadence with lifestyle-first weekend kick-off
+  - Single large weekly card featuring weekly focus theme and responsive rectangular slots grid
+  - Borderless day buttons (`Sa`, `Su`, `Mo`, `Tu`, `We`, `Th`, `Fr`) with acoustic feedback and confetti on full-week completion
+  - Dual-mode slot display: serene Curated View mode vs. populated Edit mode with dynamic `+ Add Media Slot`
+  - Secondary All Weeks Archive page with heavily-shrunk preview cards and full-fidelity historical inspection
   - Drag-and-drop media artwork upload with client-side canvas compression
 - 🌿 **[Health View Specification](health.md)**
   - Dynamic time-of-day greeting (*"Good morning"*, *"Good afternoon"*, *"Good evening"*)
