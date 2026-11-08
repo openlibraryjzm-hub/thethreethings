@@ -31,6 +31,7 @@ export interface PainPoint {
   isCompleted: boolean;
   completedAt?: number;
   createdAt: number;
+  scale?: number; // Custom font scale factor (default 1.0, range 0.6 to 6.0 / 60% to 600%)
 }
 
 export interface Goal {

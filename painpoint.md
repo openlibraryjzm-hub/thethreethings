@@ -24,9 +24,10 @@ Unlike traditional task managers that treat every item as an immediate checkable
    - **Pain Points:** Unlimited, long-term reservoir of nagging background friction.
    - **Focus View:** Strictly 3 daily actionable priority slots.
    - Users browse their Pain Points cloud in the morning, choose what matters most, and translate it into a daily Focus card.
-4. **Zero-Tracking Friction:**
+4. **Zero-Tracking Friction & Deliberate Removal:**
    - Items carry no due dates, priority tags, progress percentages, or backlog guilt.
-   - Tapping the subtle `×` on any pill immediately dismisses it once handled.
+   - Entries sit cleanly as pure typography on the chamber canvas without boxy capsule borders or persistent '×' buttons.
+   - A dedicated "Remove" mode lets users intentionally select one or more handled words and confirm their removal in a single calm step.
 5. **Stationery Visual Integrity:**
    - Follows the app's established paper aesthetic tokens: warm cream canvas (`#FAF7F2`), subtle warm dividers (`#E6DFD5`), charcoal text (`#2D2A26`), terracotta accent (`#DA7756`), and soft sage (`#6E8B74`).
 
@@ -55,6 +56,7 @@ export interface PainPoint {
   title: string;       // Friction keyword (strictly <= 26 characters)
   isCompleted: boolean;// Completion flag
   createdAt: number;   // Creation timestamp in ms
+  scale?: number;      // Custom font scale factor (default 1.0, range 0.6 to 2.5)
 }
 ```
 
@@ -71,18 +73,40 @@ export interface PainPoint {
 - Words wrap and cluster organically in the center of the chamber, adapting responsively across both mobile and desktop viewports without overflowing.
 
 ### 2. Deterministic Typographic Variation
-Each keyword is mapped to an aesthetic style preset via a string hash function, ensuring its visual appearance remains stable across re-renders:
+Each keyword is mapped to an aesthetic style preset via a string hash function, ensuring its visual appearance remains stable across re-renders without heavy pill wrappers:
 
-| Preset Role | Typographic Classes | Text Color | Surface Tint & Border |
-| :--- | :--- | :--- | :--- |
-| **Hero Serif** | `text-xl sm:text-2xl font-serif-accent italic font-bold` | `#DA7756` (Terracotta) | `bg-[#FDF3EF] border-[#DA7756]/30` |
-| **Bold Primary** | `text-sm sm:text-base font-bold` | `#2D2A26` (Charcoal) | `bg-white border-[#E6DFD5]` |
-| **Sage Reflection** | `text-base sm:text-lg font-serif-accent italic font-bold` | `#6E8B74` (Sage) | `bg-[#F0F4F1] border-[#6E8B74]/30` |
-| **Warm Ochre** | `text-xs sm:text-sm font-semibold` | `#C28B54` (Ochre) | `bg-white border-[#E6DFD5]` |
-| **Muted Taupe** | `text-[11px] sm:text-xs font-medium` | `#78716A` (Taupe) | `bg-[#FAF7F2] border-[#E6DFD5]` |
-| **Punchy Accent** | `text-lg sm:text-xl font-bold` | `#DA7756` (Terracotta) | `bg-white border-[#DA7756]/30` |
+| Preset Role | Typographic Classes | Text Color |
+| :--- | :--- | :--- |
+| **Hero Serif** | `text-xl sm:text-2xl font-serif-accent italic font-bold` | `#DA7756` (Terracotta) |
+| **Bold Primary** | `text-sm sm:text-base font-bold` | `#2D2A26` (Charcoal) |
+| **Sage Reflection** | `text-base sm:text-lg font-serif-accent italic font-bold` | `#6E8B74` (Sage) |
+| **Warm Ochre** | `text-xs sm:text-sm font-semibold` | `#C28B54` (Ochre) |
+| **Muted Taupe** | `text-[11px] sm:text-xs font-medium` | `#78716A` (Taupe) |
+| **Punchy Accent** | `text-lg sm:text-xl font-bold` | `#DA7756` (Terracotta) |
+| **Charcoal Serif** | `text-sm sm:text-base font-serif-accent italic font-bold` | `#3D3833` (Charcoal) |
 
-### 3. Rapid-Add Input Bar
+### 3. Pinch Gesturing & Drag-to-Resize Mechanics
+Each word can be sized individually across a dynamic scale spectrum (`0.6x` to `6.0x` / `60%` to `600%`), naturally reflowing neighboring words in the cloud chamber:
+- **Mobile Standard Pinch Gesturing:**
+  - Non-passive touch listeners intercept two-finger pinch events (`e.touches.length === 2`) directly on any word or in the chamber canvas.
+  - Automatically cancels default browser-level viewport zoom via `e.preventDefault()`.
+  - Calculates pinch ratio dynamically (`currentDist / initialDist`) and scales the target word fluidly in real-time.
+- **Direct Drag Handle (Desktop & Mobile):**
+  - Tapping any word selects it and displays a tactile terracotta resize knob (`MoveDiagonal2`).
+  - Dragging outward (right / up) expands the word; dragging inward (left / down) shrinks it.
+  - Supports unified pointer events for mouse cursor and single-finger dragging.
+- **Precision Docked Slider:**
+  - When a word is active, a tactile precision toolbar appears with live percentage readouts (`%`), discrete step buttons (`−` / `+`), and a smooth slider track.
+- **Persistent Scales:**
+  - Each word's custom scale factor is persisted into `localStorage` (`the_three_things_pain_points_v5`).
+
+### 4. Deliberate Removal Mode
+- Toggling the **Remove** button reveals a removal toolbar.
+- Users click or tap any word to mark it for removal (renders with a circular indicator, strikethrough, and red tint).
+- Options to "Select all" / "Deselect all" enable quick bulk management.
+- The **Confirm (N)** button permanently clears the selected items from the cloud.
+
+### 5. Rapid-Add Input Bar
 - Positioned directly above the cloud chamber.
 - Includes a live monospace character counter (`{inputVal.length}/{MAX_CHAR_LIMIT}`) that turns red when within 5 characters of the limit.
 - Submitting appends the keyword to the cloud, clears the input, and re-focuses for rapid entry.

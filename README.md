@@ -130,7 +130,7 @@ For detailed functional specifications and component mechanics, refer to the ded
   - Confined word cloud chamber with organic typographic scaling
   - Strict 26-character input limit keeping entries punchy and preventing sentence tasks
   - Quick-glance friction reservoir that feeds directly into the 3 daily Focus goals
-  - One-tap keyword dismissal
+  - Dedicated Remove mode with multi-select and confirmation to dismiss handled friction
 - 🎬 **[Media View Specification](media.md)**
   - Curated editorial Monthly Theme card & 4-slot media queue
   - Enforced locked card dimensions (`h-[230px] md:h-[240px]`) with fixed image frame (`h-[152px] md:h-[162px]`)
