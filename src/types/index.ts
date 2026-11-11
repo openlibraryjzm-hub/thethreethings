@@ -18,6 +18,7 @@ export interface WeeklyMediaSlot {
   id: string;
   title: string;
   activeDays?: DayKey[]; // Days user consumed/engaged with this media (Sa, Su, Mo, Tu, We, Th, Fr)
+  dayLevels?: Partial<Record<DayKey, number>>; // 1 to 5 engagement intensity per day
   imageUrl?: string;
   goal?: string;         // Optional legacy field
   isCompleted?: boolean; // Derived/legacy completion status
@@ -43,7 +44,8 @@ export interface PainPoint {
   isCompleted: boolean;
   completedAt?: number;
   createdAt: number;
-  scale?: number; // Custom font scale factor (default 1.0, range 0.6 to 6.0 / 60% to 600%)
+  scale?: number; // Custom font scale factor derived from 5-star intensity (0.75x to 3.5x)
+  intensity?: number; // 5-Star heat intensity (1 to 5) controlling size, color, and glow
 }
 
 export interface Goal {

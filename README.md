@@ -155,14 +155,16 @@ For detailed functional specifications and component mechanics, refer to the ded
 - ⛰️🎬🧭 **[Spatial Word Cloud Specification](painpoint.md)**
   - 5-mode reference reservoir: Pain Points (friction), Media Desires (backlog), IRL Adventures (offline spots), Projects (side ideas), and OOMF (curated music/feeds)
   - Direct companion links: Pain Points, Adventures & Projects link to Focus View; Media Desires & OOMF link to Media View
-  - Confined word cloud chamber with organic typographic scaling, 2-finger pinch, and drag resizing
+  - Confined word cloud chamber with organic spatial spacing and natural word clustering
+  - Star-governed size and rising heat glow: 5 stars replace manual sliders, setting scale (0.75x to 4.5x), color, and radiant glow (from dim whisper to blazing five-alarm fire 🔥)
   - Compact mode switcher: active tab smoothly expands its label while inactive tabs display icons to prevent horizontal mobile truncation
   - Strict 26-character input limit keeping entries punchy and preventing sentence tasks
   - Dedicated Remove mode with multi-select and confirmation to dismiss handled keywords
 - 🎬 **[Media View Specification](media.md)**
   - Saturday–Friday weekly cadence with lifestyle-first weekend kick-off
   - Single large weekly card featuring weekly focus theme and responsive rectangular slots grid
-  - Borderless day buttons (`Sa`, `Su`, `Mo`, `Tu`, `We`, `Th`, `Fr`) with acoustic feedback and confetti on full-week completion
+  - 5-level engagement intensity system on day buttons (`Sa`, `Su`, `Mo`, `Tu`, `We`, `Th`, `Fr`) with under-letter dot indicators (`•` to `•••••`)
+  - Docked level adjuster bar with `+` and `−` stepper controls to adjust engagement (Level 0: Off to Level 5: Marathon Peak 🌟) without cycle fatigue
   - Dual-mode slot display: serene Curated View mode vs. populated Edit mode with dynamic `+ Add Media Slot`
   - Secondary All Weeks Archive page with heavily-shrunk preview cards and full-fidelity historical inspection
   - Drag-and-drop media artwork upload with client-side canvas compression
@@ -191,5 +193,5 @@ For detailed functional specifications and component mechanics, refer to the ded
 1. **Maintain Palette Integrity:** Strictly use the warm cream (`#FAF7F2`), terracotta (`#DA7756`), and sage (`#6E8B74`) palette. Avoid default cold blues or jarring dark-mode toggles.
 2. **Permanent Slots Rules:**
    - Focus screen: exactly 3 cards (`ensureThreeGoals`).
-   - Media screen: exactly 4 cards with locked card bounds.
+   - Media screen: responsive rectangular slots grid defaulting to 6 slots, expandable via `+ Add Media Slot` in Edit mode.
 3. **Always Run Type Checks:** Before completing changes, verify build health with `npm run build` (`tsc && vite build`).

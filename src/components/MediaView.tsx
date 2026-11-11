@@ -5,6 +5,7 @@ import {
   Trash2,
   RefreshCw,
   Plus,
+  Minus,
   Sparkles,
   Calendar,
   Layers,
@@ -24,6 +25,73 @@ const LEGACY_CARDS_STORAGE_KEY = 'the_three_things_media_cards_v1';
 const LEGACY_THEME_STORAGE_KEY = 'the_three_things_monthly_theme_v1';
 
 export const WEEK_DAYS: DayKey[] = ['Sa', 'Su', 'Mo', 'Tu', 'We', 'Th', 'Fr'];
+
+export const DAY_FULL_NAMES: Record<DayKey, string> = {
+  Sa: 'Saturday',
+  Su: 'Sunday',
+  Mo: 'Monday',
+  Tu: 'Tuesday',
+  We: 'Wednesday',
+  Th: 'Thursday',
+  Fr: 'Friday',
+};
+
+export interface DayLevelConfig {
+  label: string;
+  dotCount: number;
+  textColor: string;
+  shadowClass?: string;
+  badgeColor: string;
+}
+
+export const DAY_LEVEL_CONFIGS: Record<number, DayLevelConfig> = {
+  0: {
+    label: 'Inactive',
+    dotCount: 0,
+    textColor: 'text-[#78716A]/40 hover:text-[#2D2A26]',
+    badgeColor: 'text-[#78716A]/60',
+  },
+  1: {
+    label: 'Quick Check-in',
+    dotCount: 1,
+    textColor: 'text-[#78716A] font-semibold',
+    badgeColor: 'text-[#78716A]',
+  },
+  2: {
+    label: 'Mild Session',
+    dotCount: 2,
+    textColor: 'text-[#44403C] font-bold',
+    badgeColor: 'text-[#44403C]',
+  },
+  3: {
+    label: 'Deep Focus',
+    dotCount: 3,
+    textColor: 'text-[#DA7756] font-extrabold',
+    badgeColor: 'text-[#DA7756]',
+    shadowClass: 'drop-shadow-[0_1px_4px_rgba(218,119,86,0.3)]',
+  },
+  4: {
+    label: 'Immersive Dive',
+    dotCount: 4,
+    textColor: 'text-[#C84A22] font-black',
+    badgeColor: 'text-[#C84A22]',
+    shadowClass: 'drop-shadow-[0_1px_6px_rgba(200,74,34,0.4)]',
+  },
+  5: {
+    label: 'Marathon Peak 🌟',
+    dotCount: 5,
+    textColor: 'text-[#D97706] font-black',
+    badgeColor: 'text-[#D97706]',
+    shadowClass: 'drop-shadow-[0_1px_8px_rgba(217,119,6,0.5)]',
+  },
+};
+
+export const getSlotDayLevel = (slot: WeeklyMediaSlot, day: DayKey): number => {
+  if (slot.dayLevels && typeof slot.dayLevels[day] === 'number') {
+    return Math.max(0, Math.min(5, slot.dayLevels[day]!));
+  }
+  return (slot.activeDays || []).includes(day) ? 1 : 0;
+};
 
 // Helper to compute Saturday–Friday week details and formatted date range
 // Saturday + Sunday (first 2 weekend days) -> Monday–Friday (remaining 5 days)
@@ -230,6 +298,16 @@ export const MediaView: React.FC = () => {
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const themeInputRef = useRef<HTMLInputElement | null>(null);
   const [isThemeFocused, setIsThemeFocused] = useState(false);
+  const [activeDayFocus, setActiveDayFocus] = useState<{
+    weekId: string;
+    slotId: string;
+    day: DayKey;
+  } | null>(null);
+
+  // Clear active day focus when switching view mode or selected week
+  useEffect(() => {
+    setActiveDayFocus(null);
+  }, [viewMode, selectedWeekId]);
 
   // Persist weeks
   useEffect(() => {
@@ -276,16 +354,26 @@ export const MediaView: React.FC = () => {
 
   // Clear slot content
   const handleClearSlot = (weekId: string, slotId: string) => {
+    if (activeDayFocus?.slotId === slotId) {
+      setActiveDayFocus(null);
+    }
     handleUpdateSlot(weekId, slotId, {
       title: '',
       activeDays: [],
+      dayLevels: {},
       imageUrl: '',
       completedAt: undefined,
     });
   };
 
-  // Toggle a day button (Sa, Su, Mo, Tu, We, Th, Fr)
-  const handleToggleDay = (weekId: string, slotId: string, day: DayKey) => {
+  // Set engagement level (0 to 5) for a day in a slot
+  const handleSetDayLevel = (
+    weekId: string,
+    slotId: string,
+    day: DayKey,
+    targetLevel: number
+  ) => {
+    const clamped = Math.max(0, Math.min(5, targetLevel));
     setWeeks((prev) =>
       prev.map((w) => {
         if (w.id !== weekId) return w;
@@ -294,35 +382,103 @@ export const MediaView: React.FC = () => {
           updatedAt: Date.now(),
           slots: w.slots.map((s) => {
             if (s.id !== slotId) return s;
-            const currentDays = s.activeDays || [];
-            const exists = currentDays.includes(day);
-            const nextDays = exists
-              ? currentDays.filter((d) => d !== day)
-              : [...currentDays, day];
+            const nextDayLevels: Partial<Record<DayKey, number>> = {
+              ...(s.dayLevels || {}),
+            };
 
-            if (!exists) {
-              playCompletionSound();
-              if (nextDays.length === 7) {
-                confetti({
-                  particleCount: 50,
-                  spread: 60,
-                  origin: { y: 0.6 },
-                  colors: ['#DA7756', '#6E8B74', '#F5F0E8', '#C86446'],
-                  disableForReducedMotion: true,
-                });
-              }
+            if (clamped > 0) {
+              nextDayLevels[day] = clamped;
+            } else {
+              delete nextDayLevels[day];
+            }
+
+            const nextActiveDays = (Object.keys(nextDayLevels) as DayKey[]).filter(
+              (d) => (nextDayLevels[d] || 0) > 0
+            );
+
+            // Celebrate Level 5 peak
+            if (clamped === 5) {
+              confetti({
+                particleCount: 25,
+                spread: 45,
+                origin: { y: 0.7 },
+                colors: ['#D97706', '#F59E0B', '#DA7756'],
+                disableForReducedMotion: true,
+              });
+            }
+
+            // Celebrate completing all 7 days in the week
+            if (nextActiveDays.length === 7 && (s.activeDays?.length || 0) < 7) {
+              confetti({
+                particleCount: 50,
+                spread: 60,
+                origin: { y: 0.6 },
+                colors: ['#DA7756', '#6E8B74', '#F5F0E8', '#C86446'],
+                disableForReducedMotion: true,
+              });
             }
 
             return {
               ...s,
-              activeDays: nextDays,
-              isCompleted: nextDays.length > 0,
-              completedAt: nextDays.length > 0 ? (s.completedAt || Date.now()) : undefined,
+              dayLevels: nextDayLevels,
+              activeDays: nextActiveDays,
+              isCompleted: nextActiveDays.length > 0,
+              completedAt: nextActiveDays.length > 0 ? (s.completedAt || Date.now()) : undefined,
             };
           }),
         };
       })
     );
+  };
+
+  // Step intensity level with + / - buttons
+  const handleStepDayLevel = (
+    weekId: string,
+    slotId: string,
+    day: DayKey,
+    delta: number
+  ) => {
+    const week = weeks.find((w) => w.id === weekId);
+    const slot = week?.slots.find((s) => s.id === slotId);
+    if (!slot) return;
+    const current = getSlotDayLevel(slot, day);
+    const nextLevel = Math.max(0, Math.min(5, current + delta));
+    if (nextLevel !== current) {
+      if (current === 0 && nextLevel > 0) {
+        playCompletionSound();
+      }
+      handleSetDayLevel(weekId, slotId, day, nextLevel);
+    }
+  };
+
+  // Click on a day button in the 7-day strip
+  const handleDayButtonClick = (
+    weekId: string,
+    slotId: string,
+    day: DayKey
+  ) => {
+    const week = weeks.find((w) => w.id === weekId);
+    const slot = week?.slots.find((s) => s.id === slotId);
+    if (!slot) return;
+    const current = getSlotDayLevel(slot, day);
+
+    const isAlreadyFocused =
+      activeDayFocus?.weekId === weekId &&
+      activeDayFocus?.slotId === slotId &&
+      activeDayFocus?.day === day;
+
+    if (isAlreadyFocused) {
+      // Dismiss adjuster bar if tapping the already focused day
+      setActiveDayFocus(null);
+    } else {
+      // Focus this day to display the docked adjuster bar
+      setActiveDayFocus({ weekId, slotId, day });
+      // If inactive, jumpstart to Level 1 with sound
+      if (current === 0) {
+        playCompletionSound();
+        handleSetDayLevel(weekId, slotId, day, 1);
+      }
+    }
   };
 
   // Add a new rectangular slot to a week
@@ -331,6 +487,7 @@ export const MediaView: React.FC = () => {
       id: `slot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: '',
       activeDays: [],
+      dayLevels: {},
       imageUrl: '',
     };
     setWeeks((prev) =>
@@ -340,6 +497,9 @@ export const MediaView: React.FC = () => {
 
   // Remove a slot from a week (if more than 1)
   const handleRemoveSlot = (weekId: string, slotId: string) => {
+    if (activeDayFocus?.slotId === slotId) {
+      setActiveDayFocus(null);
+    }
     setWeeks((prev) =>
       prev.map((w) => {
         if (w.id !== weekId || w.slots.length <= 1) return w;
@@ -631,27 +791,136 @@ export const MediaView: React.FC = () => {
                   </div>
 
                   {/* 3. Horizontally Aligned Borderless Day Buttons: Sa, Su, Mo, Tu, We, Th, Fr */}
-                  <div className="pt-2 border-t border-[#E6DFD5]/50">
+                  <div className="pt-2 border-t border-[#E6DFD5]/50 flex flex-col gap-1">
                     <div className="grid grid-cols-7 gap-0.5 w-full items-center justify-items-center">
                       {WEEK_DAYS.map((day) => {
-                        const isActive = (slot.activeDays || []).includes(day);
+                        const level = getSlotDayLevel(slot, day);
+                        const isDayFocused =
+                          activeDayFocus?.weekId === week.id &&
+                          activeDayFocus?.slotId === slot.id &&
+                          activeDayFocus?.day === day;
+                        const cfg = DAY_LEVEL_CONFIGS[level] || DAY_LEVEL_CONFIGS[0];
+
                         return (
                           <button
                             key={day}
                             type="button"
-                            onClick={() => handleToggleDay(week.id, slot.id, day)}
-                            title={`Toggle ${day}`}
-                            className={`py-1 px-1 flex items-center justify-center transition-all cursor-pointer select-none bg-transparent border-none outline-none ${
-                              isActive
-                                ? 'text-base md:text-lg font-extrabold text-[#DA7756] scale-110 drop-shadow-2xs'
-                                : 'text-sm md:text-base font-semibold text-[#78716A]/40 hover:text-[#2D2A26] hover:scale-105'
+                            onClick={() => handleDayButtonClick(week.id, slot.id, day)}
+                            title={`${DAY_FULL_NAMES[day]}: ${level === 0 ? 'Off' : `Level ${level} (${cfg.label})`}`}
+                            className={`w-full py-1 px-0.5 flex flex-col items-center justify-center rounded-xl transition-all cursor-pointer select-none border ${
+                              isDayFocused
+                                ? 'bg-[#F2ECE4] border-[#DA7756]/40 shadow-2xs'
+                                : 'border-transparent hover:bg-black/[0.03]'
                             }`}
                           >
-                            {day}
+                            <span
+                              className={`text-sm md:text-base leading-tight transition-all ${cfg.textColor} ${
+                                cfg.shadowClass || ''
+                              } ${level > 0 ? 'scale-105' : ''}`}
+                            >
+                              {day}
+                            </span>
+
+                            {/* Level Dots */}
+                            <div className="h-2 flex items-center justify-center gap-0.5 mt-0.5">
+                              {level > 0 ? (
+                                Array.from({ length: level }).map((_, i) => (
+                                  <span
+                                    key={i}
+                                    className={`w-1 h-1 rounded-full ${
+                                      level === 5
+                                        ? 'bg-[#D97706] shadow-[0_0_3px_#D97706]'
+                                        : level >= 3
+                                        ? 'bg-[#DA7756]'
+                                        : 'bg-[#78716A]'
+                                    }`}
+                                  />
+                                ))
+                              ) : (
+                                <span className="w-1 h-1 rounded-full bg-transparent" />
+                              )}
+                            </div>
                           </button>
                         );
                       })}
                     </div>
+
+                    {/* Docked Level Adjuster Bar: Level xyz with + and - buttons */}
+                    <AnimatePresence>
+                      {activeDayFocus?.weekId === week.id &&
+                        activeDayFocus?.slotId === slot.id && (
+                          <motion.div
+                            key={`dock-${slot.id}-${activeDayFocus.day}`}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.18, ease: 'easeOut' }}
+                            className="overflow-hidden"
+                          >
+                            {(() => {
+                              const focusedDay = activeDayFocus.day;
+                              const currentLevel = getSlotDayLevel(slot, focusedDay);
+                              const cfg = DAY_LEVEL_CONFIGS[currentLevel] || DAY_LEVEL_CONFIGS[0];
+
+                              return (
+                                <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF4ED] border border-[#E6DFD5] rounded-xl text-xs shadow-2xs mt-1">
+                                  {/* Left: Day + Level label (e.g. Tuesday · Level 3: Deep Focus) */}
+                                  <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                                    <span className="font-bold text-[#2D2A26] shrink-0">
+                                      {DAY_FULL_NAMES[focusedDay]}
+                                    </span>
+                                    <span className="text-[#78716A]/40">·</span>
+                                    <span className={`font-semibold truncate ${cfg.badgeColor}`}>
+                                      {currentLevel === 0
+                                        ? 'Off'
+                                        : `Level ${currentLevel}: ${cfg.label}`}
+                                    </span>
+                                  </div>
+
+                                  {/* Right: [-] [+] stepper and Done */}
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleStepDayLevel(week.id, slot.id, focusedDay, -1)
+                                      }
+                                      disabled={currentLevel <= 0}
+                                      className="w-6 h-6 rounded-lg bg-white border border-[#E6DFD5] text-[#2D2A26] disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#FAF7F2] active:scale-95 flex items-center justify-center font-bold transition-all shadow-2xs cursor-pointer"
+                                      title="Decrease level"
+                                    >
+                                      <Minus className="w-3 h-3 stroke-[2.5]" />
+                                    </button>
+
+                                    <span className="w-4 text-center font-bold text-xs text-[#2D2A26]">
+                                      {currentLevel}
+                                    </span>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleStepDayLevel(week.id, slot.id, focusedDay, 1)
+                                      }
+                                      disabled={currentLevel >= 5}
+                                      className="w-6 h-6 rounded-lg bg-white border border-[#E6DFD5] text-[#2D2A26] disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#FAF7F2] active:scale-95 flex items-center justify-center font-bold transition-all shadow-2xs cursor-pointer"
+                                      title="Increase level"
+                                    >
+                                      <Plus className="w-3 h-3 stroke-[2.5]" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveDayFocus(null)}
+                                      className="ml-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold text-[#78716A] hover:text-[#2D2A26] hover:bg-black/5 transition-colors cursor-pointer"
+                                    >
+                                      Done
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </motion.div>
+                        )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>

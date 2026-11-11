@@ -62,13 +62,23 @@ Arranged in an airy responsive grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 
 - **Uploaded State:** Crisp artwork display with frosted hover actions (`Replace` and `Remove`).
 - **Client-Side Compression:** Images are compressed via canvas to lightweight JPEG (`quality: 0.82`, max dimension 960px) to safeguard `localStorage` storage limits.
 
-#### B. Media Title & Borderless Day Buttons
+#### B. Media Title & 5-Level Day Buttons with Stepper Bar
 - **Media Title Field:** Bold charcoal input (`font-bold text-[#2D2A26]`) for overarching title (e.g. *Severance*, *Dune*, *Three-Body Problem*) with quick trash reset.
 - **7 Horizontally Aligned Day Buttons:** A clean, borderless typographic strip with buttons for each day in Saturday–Friday order:
   - `Sa`, `Su`, `Mo`, `Tu`, `We`, `Th`, `Fr`
-  - Inactive days are displayed in calm, muted taupe typography.
-  - Active (logged) days feature larger, prominent bold orange text (`text-[#DA7756]`).
-  - Clicking any day marks that day as completed with a tactile acoustic chime ([`playCompletionSound()`](../src/utils/sound.ts)). Completing all 7 days triggers celebratory confetti.
+  - **5 Engagement Levels with Dot Indicators:** Each day supports a 5-level engagement scale that renders dynamic typography and dot indicators (`•` to `•••••`):
+    - **Level 0 (Off):** Muted taupe typography (`text-[#78716A]/40`).
+    - **Level 1 (Quick Check-in):** Subtle charcoal (`text-[#78716A]`, 1 dot).
+    - **Level 2 (Mild Session):** Bold charcoal (`text-[#44403C]`, 2 dots).
+    - **Level 3 (Deep Focus):** Signature terracotta with soft drop shadow (`text-[#DA7756]`, 3 dots).
+    - **Level 4 (Immersive Dive):** Deep coral with enhanced weight and shadow (`text-[#C84A22]`, 4 dots).
+    - **Level 5 (Marathon Peak 🌟):** Radiant golden amber (`text-[#D97706]`, 5 dots, ambient glow). Reaching Level 5 triggers golden confetti.
+  - **Docked Level Adjuster Bar (Stepper UI):**
+    - Tapping an inactive day immediately activates it to Level 1, plays a tactile chime ([`playCompletionSound()`](../src/utils/sound.ts)), and opens the slim docked adjuster bar beneath the day strip.
+    - Tapping an active day opens the docked bar displaying the focused day and its active level: e.g. `Tuesday · Level 3: Deep Focus`.
+    - Includes **`+` and `−` stepper buttons** to quickly adjust engagement up to 5 or down to 0, avoiding awkward cycling.
+    - Includes a quick `Done` dismiss action. Tapping another day shifts focus instantly.
+  - Completing all 7 days in a slot triggers celebratory confetti.
 
 #### C. Dynamic "+ Add Media Slot" Button
 - Positioned at the end of the rectangular grid as a dashed container matching slot geometry.
@@ -128,6 +138,7 @@ export interface WeeklyMediaSlot {
   id: string;          // Unique slot identifier
   title: string;       // Media title (e.g. 'Severance', 'Dune')
   activeDays?: DayKey[]; // Days logged: Sa, Su, Mo, Tu, We, Th, Fr
+  dayLevels?: Partial<Record<DayKey, number>>; // 1 to 5 engagement intensity per day
   imageUrl?: string;   // Base64 compressed artwork
   completedAt?: number;// Unix timestamp when completed
 }

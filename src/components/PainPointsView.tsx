@@ -12,7 +12,8 @@ import {
   Cloud,
   Trash2,
   Check,
-  MoveDiagonal2,
+  Star,
+  Flame,
 } from 'lucide-react';
 import { PainPoint, ActiveView } from '../types';
 
@@ -26,62 +27,134 @@ const OOMF_STORAGE_KEY = 'the_three_things_oomf_v1';
 const MODE_STORAGE_KEY = 'the_three_things_cloud_mode_v1';
 
 const MAX_CHAR_LIMIT = 26;
-const MIN_SCALE = 0.6;
-const MAX_SCALE = 6.0;
+
+// 5-Star Heat Map & Glow Configuration (Sensible distribution mapping stars to scale, color, and glow)
+export interface IntensityLevelConfig {
+  level: number;
+  scale: number;
+  label: string;
+  shortLabel: string;
+  textColor: string;
+  glowClass: string;
+  opacityClass: string;
+  isFiveAlarm: boolean;
+}
+
+export const INTENSITY_CONFIG: Record<number, IntensityLevelConfig> = {
+  1: {
+    level: 1,
+    scale: 0.75, // 75% size: dim background whisper
+    label: '1 Star: Dim',
+    shortLabel: 'Dim',
+    textColor: 'text-[#78716A]/50',
+    glowClass: '',
+    opacityClass: 'opacity-55 hover:opacity-85',
+    isFiveAlarm: false,
+  },
+  2: {
+    level: 2,
+    scale: 1.2, // 120% size: mild, legible
+    label: '2 Stars: Mild',
+    shortLabel: 'Mild',
+    textColor: 'text-[#645E57]',
+    glowClass: '',
+    opacityClass: 'opacity-85 hover:opacity-100',
+    isFiveAlarm: false,
+  },
+  3: {
+    level: 3,
+    scale: 1.9, // 190% size: moderate, active daily focus
+    label: '3 Stars: Moderate',
+    shortLabel: 'Moderate',
+    textColor: 'text-[#2D2A26]',
+    glowClass: 'drop-shadow-[0_1px_2px_rgba(45,42,38,0.18)]',
+    opacityClass: 'opacity-100',
+    isFiveAlarm: false,
+  },
+  4: {
+    level: 4,
+    scale: 3.0, // 300% size: high heat, urgent prominence
+    label: '4 Stars: High Heat',
+    shortLabel: 'High Heat',
+    textColor: 'text-[#DA7756]',
+    glowClass: 'drop-shadow-[0_2px_12px_rgba(218,119,86,0.45)]',
+    opacityClass: 'opacity-100',
+    isFiveAlarm: false,
+  },
+  5: {
+    level: 5,
+    scale: 4.5, // 450% size: five-alarm fire, dominant blazing hero keyword
+    label: '5 Stars: Five-Alarm Fire 🔥',
+    shortLabel: 'Five-Alarm Fire 🔥',
+    textColor: 'text-[#DC2626]',
+    glowClass: 'drop-shadow-[0_0_16px_rgba(220,38,38,0.6)] drop-shadow-[0_0_32px_rgba(239,68,68,0.35)]',
+    opacityClass: 'opacity-100',
+    isFiveAlarm: true,
+  },
+};
+
+export const scaleToIntensity = (scale?: number): number => {
+  if (!scale) return 3;
+  if (scale <= 0.95) return 1;
+  if (scale <= 1.5) return 2;
+  if (scale <= 2.4) return 3;
+  if (scale <= 3.7) return 4;
+  return 5;
+};
 
 // 1. Pain Points (friction reservoir)
 const STARTER_PAIN_POINTS: PainPoint[] = [
-  { id: '1', title: 'Bad Sleep Routine', isCompleted: false, createdAt: 1, scale: 1.25 },
-  { id: '2', title: 'Neck & Posture Ache', isCompleted: false, createdAt: 2, scale: 1.0 },
-  { id: '3', title: 'Tax Paperwork', isCompleted: false, createdAt: 3, scale: 1.35 },
-  { id: '4', title: 'Cluttered Inbox', isCompleted: false, createdAt: 4, scale: 0.9 },
-  { id: '5', title: 'Dentist Delay', isCompleted: false, createdAt: 5, scale: 1.1 },
-  { id: '6', title: 'Garage Boxes', isCompleted: false, createdAt: 6, scale: 0.85 },
-  { id: '7', title: 'Screen Time Fatigue', isCompleted: false, createdAt: 7, scale: 1.15 },
+  { id: '1', title: 'Bad Sleep Routine', isCompleted: false, createdAt: 1, intensity: 5, scale: 4.5 },
+  { id: '2', title: 'Neck & Posture Ache', isCompleted: false, createdAt: 2, intensity: 3, scale: 1.9 },
+  { id: '3', title: 'Tax Paperwork', isCompleted: false, createdAt: 3, intensity: 4, scale: 3.0 },
+  { id: '4', title: 'Cluttered Inbox', isCompleted: false, createdAt: 4, intensity: 1, scale: 0.75 },
+  { id: '5', title: 'Dentist Delay', isCompleted: false, createdAt: 5, intensity: 4, scale: 3.0 },
+  { id: '6', title: 'Garage Boxes', isCompleted: false, createdAt: 6, intensity: 2, scale: 1.2 },
+  { id: '7', title: 'Screen Time Fatigue', isCompleted: false, createdAt: 7, intensity: 3, scale: 1.9 },
 ];
 
 // 2. Media Desires (backlog reservoir)
 const STARTER_MEDIA_DESIRES: PainPoint[] = [
-  { id: 'm1', title: 'Sci-Fi Classics', isCompleted: false, createdAt: 1, scale: 1.25 },
-  { id: 'm2', title: 'Cozy Indies', isCompleted: false, createdAt: 2, scale: 1.0 },
-  { id: 'm3', title: 'Elden Ring DLC', isCompleted: false, createdAt: 3, scale: 1.35 },
-  { id: 'm4', title: 'Studio Ghibli', isCompleted: false, createdAt: 4, scale: 0.95 },
-  { id: 'm5', title: 'Cyberpunk Anime', isCompleted: false, createdAt: 5, scale: 1.15 },
-  { id: 'm6', title: 'Metroidvanias', isCompleted: false, createdAt: 6, scale: 0.85 },
-  { id: 'm7', title: 'Philosophy Non-Fiction', isCompleted: false, createdAt: 7, scale: 1.1 },
+  { id: 'm1', title: 'Sci-Fi Classics', isCompleted: false, createdAt: 1, intensity: 4, scale: 3.0 },
+  { id: 'm2', title: 'Cozy Indies', isCompleted: false, createdAt: 2, intensity: 2, scale: 1.2 },
+  { id: 'm3', title: 'Elden Ring DLC', isCompleted: false, createdAt: 3, intensity: 5, scale: 4.5 },
+  { id: 'm4', title: 'Studio Ghibli', isCompleted: false, createdAt: 4, intensity: 3, scale: 1.9 },
+  { id: 'm5', title: 'Cyberpunk Anime', isCompleted: false, createdAt: 5, intensity: 4, scale: 3.0 },
+  { id: 'm6', title: 'Metroidvanias', isCompleted: false, createdAt: 6, intensity: 1, scale: 0.75 },
+  { id: 'm7', title: 'Philosophy Non-Fiction', isCompleted: false, createdAt: 7, intensity: 3, scale: 1.9 },
 ];
 
 // 3. IRL Adventures (trips, hikes, spots)
 const STARTER_ADVENTURES: PainPoint[] = [
-  { id: 'a1', title: 'Coastal Ridge Hike', isCompleted: false, createdAt: 1, scale: 1.25 },
-  { id: 'a2', title: 'Kyoto Trip', isCompleted: false, createdAt: 2, scale: 1.35 },
-  { id: 'a3', title: 'Camping Weekend', isCompleted: false, createdAt: 3, scale: 1.0 },
-  { id: 'a4', title: 'Night Food Market', isCompleted: false, createdAt: 4, scale: 0.95 },
-  { id: 'a5', title: 'Kayaking in the Bay', isCompleted: false, createdAt: 5, scale: 1.15 },
-  { id: 'a6', title: 'Hot Springs Retreat', isCompleted: false, createdAt: 6, scale: 0.85 },
-  { id: 'a7', title: 'Scenic Train Route', isCompleted: false, createdAt: 7, scale: 1.1 },
+  { id: 'a1', title: 'Coastal Ridge Hike', isCompleted: false, createdAt: 1, intensity: 4, scale: 3.0 },
+  { id: 'a2', title: 'Kyoto Trip', isCompleted: false, createdAt: 2, intensity: 5, scale: 4.5 },
+  { id: 'a3', title: 'Camping Weekend', isCompleted: false, createdAt: 3, intensity: 3, scale: 1.9 },
+  { id: 'a4', title: 'Night Food Market', isCompleted: false, createdAt: 4, intensity: 2, scale: 1.2 },
+  { id: 'a5', title: 'Kayaking in the Bay', isCompleted: false, createdAt: 5, intensity: 3, scale: 1.9 },
+  { id: 'a6', title: 'Hot Springs Retreat', isCompleted: false, createdAt: 6, intensity: 1, scale: 0.75 },
+  { id: 'a7', title: 'Scenic Train Route', isCompleted: false, createdAt: 7, intensity: 3, scale: 1.9 },
 ];
 
 // 4. Projects (side & passion projects)
 const STARTER_PROJECTS: PainPoint[] = [
-  { id: 'p1', title: 'Portfolio Redesign', isCompleted: false, createdAt: 1, scale: 1.25 },
-  { id: 'p2', title: 'Custom Mechanical Board', isCompleted: false, createdAt: 2, scale: 1.0 },
-  { id: 'p3', title: 'Woodworking Desk Build', isCompleted: false, createdAt: 3, scale: 1.35 },
-  { id: 'p4', title: 'Indie Game Prototype', isCompleted: false, createdAt: 4, scale: 1.15 },
-  { id: 'p5', title: 'Podcast Setup', isCompleted: false, createdAt: 5, scale: 0.9 },
-  { id: 'p6', title: 'Recipe Zine', isCompleted: false, createdAt: 6, scale: 0.85 },
-  { id: 'p7', title: 'Open Source CLI Tool', isCompleted: false, createdAt: 7, scale: 1.1 },
+  { id: 'p1', title: 'Portfolio Redesign', isCompleted: false, createdAt: 1, intensity: 4, scale: 3.0 },
+  { id: 'p2', title: 'Custom Mechanical Board', isCompleted: false, createdAt: 2, intensity: 3, scale: 1.9 },
+  { id: 'p3', title: 'Woodworking Desk Build', isCompleted: false, createdAt: 3, intensity: 5, scale: 4.5 },
+  { id: 'p4', title: 'Indie Game Prototype', isCompleted: false, createdAt: 4, intensity: 4, scale: 3.0 },
+  { id: 'p5', title: 'Podcast Setup', isCompleted: false, createdAt: 5, intensity: 2, scale: 1.2 },
+  { id: 'p6', title: 'Recipe Zine', isCompleted: false, createdAt: 6, intensity: 1, scale: 0.75 },
+  { id: 'p7', title: 'Open Source CLI Tool', isCompleted: false, createdAt: 7, intensity: 3, scale: 1.9 },
 ];
 
 // 5. OOMF (channels, playlists, music aided by oomfs.tv & oomfit)
 const STARTER_OOMF: PainPoint[] = [
-  { id: 'o1', title: 'Deep Work Ambient', isCompleted: false, createdAt: 1, scale: 1.25 },
-  { id: 'o2', title: 'Video Essay Channels', isCompleted: false, createdAt: 2, scale: 1.15 },
-  { id: 'o3', title: 'City Pop Nightdrive', isCompleted: false, createdAt: 3, scale: 1.35 },
-  { id: 'o4', title: 'Tech Philosophy', isCompleted: false, createdAt: 4, scale: 0.95 },
-  { id: 'o5', title: 'Late Night Synthwave', isCompleted: false, createdAt: 5, scale: 1.1 },
-  { id: 'o6', title: 'Lo-Fi Coding Beats', isCompleted: false, createdAt: 6, scale: 1.0 },
-  { id: 'o7', title: 'Acoustic Guitar Sets', isCompleted: false, createdAt: 7, scale: 0.85 },
+  { id: 'o1', title: 'Deep Work Ambient', isCompleted: false, createdAt: 1, intensity: 4, scale: 3.0 },
+  { id: 'o2', title: 'Video Essay Channels', isCompleted: false, createdAt: 2, intensity: 3, scale: 1.9 },
+  { id: 'o3', title: 'City Pop Nightdrive', isCompleted: false, createdAt: 3, intensity: 5, scale: 4.5 },
+  { id: 'o4', title: 'Tech Philosophy', isCompleted: false, createdAt: 4, intensity: 2, scale: 1.2 },
+  { id: 'o5', title: 'Late Night Synthwave', isCompleted: false, createdAt: 5, intensity: 4, scale: 3.0 },
+  { id: 'o6', title: 'Lo-Fi Coding Beats', isCompleted: false, createdAt: 6, intensity: 3, scale: 1.9 },
+  { id: 'o7', title: 'Acoustic Guitar Sets', isCompleted: false, createdAt: 7, intensity: 1, scale: 0.75 },
 ];
 
 interface ModeConfig {
@@ -186,43 +259,15 @@ const MODES: ModeConfig[] = [
   },
 ];
 
-// Typographic palette variations with base REM sizing for fluid scaling
-const CLOUD_STYLES = [
-  {
-    font: 'font-serif-accent italic font-bold',
-    baseRem: 1.35, // ~21.6px
-    color: 'text-[#DA7756]',
-  },
-  {
-    font: 'font-bold',
-    baseRem: 1.0, // ~16px
-    color: 'text-[#2D2A26]',
-  },
-  {
-    font: 'font-serif-accent italic font-bold',
-    baseRem: 1.15, // ~18.4px
-    color: 'text-[#6E8B74]',
-  },
-  {
-    font: 'font-semibold',
-    baseRem: 0.85, // ~13.6px
-    color: 'text-[#C28B54]',
-  },
-  {
-    font: 'font-medium',
-    baseRem: 0.75, // ~12px
-    color: 'text-[#78716A]',
-  },
-  {
-    font: 'font-bold',
-    baseRem: 1.25, // ~20px
-    color: 'text-[#DA7756]',
-  },
-  {
-    font: 'font-serif-accent italic font-bold',
-    baseRem: 1.05, // ~16.8px
-    color: 'text-[#3D3833]',
-  },
+// Typographic base styles for organic font variety across the cloud
+const CLOUD_FONT_STYLES = [
+  { font: 'font-serif-accent italic', baseRem: 1.25 },
+  { font: 'font-sans', baseRem: 1.0 },
+  { font: 'font-serif-accent italic', baseRem: 1.15 },
+  { font: 'font-sans', baseRem: 0.9 },
+  { font: 'font-sans', baseRem: 0.8 },
+  { font: 'font-sans font-bold', baseRem: 1.1 },
+  { font: 'font-serif-accent italic', baseRem: 1.05 },
 ];
 
 const getStyleForWord = (str: string, index: number) => {
@@ -231,7 +276,7 @@ const getStyleForWord = (str: string, index: number) => {
     hash = (hash << 5) - hash + str.charCodeAt(i);
     hash |= 0;
   }
-  return CLOUD_STYLES[Math.abs(hash) % CLOUD_STYLES.length];
+  return CLOUD_FONT_STYLES[Math.abs(hash) % CLOUD_FONT_STYLES.length];
 };
 
 interface PainPointWordProps {
@@ -242,7 +287,6 @@ interface PainPointWordProps {
   isActive: boolean;
   onToggleSelect: (id: string) => void;
   onSetActive: (id: string | null) => void;
-  onUpdateScale: (id: string, scale: number) => void;
 }
 
 const PainPointWord: React.FC<PainPointWordProps> = ({
@@ -253,96 +297,18 @@ const PainPointWord: React.FC<PainPointWordProps> = ({
   isActive,
   onToggleSelect,
   onSetActive,
-  onUpdateScale,
 }) => {
   const wordRef = useRef<HTMLDivElement>(null);
-  const style = getStyleForWord(item.title, index);
-  const scale = item.scale ?? 1.0;
-  const fontSizeRem = style.baseRem * scale;
+  const fontStyle = getStyleForWord(item.title, index);
 
-  // Touch listener for two-finger pinch gesture on mobile
-  useEffect(() => {
-    const el = wordRef.current;
-    if (!el) return;
+  // Intensity (1 to 5 stars) dictates the exact scale, color, and glow
+  const currentIntensity = item.intensity ?? scaleToIntensity(item.scale);
+  const intensityCfg = INTENSITY_CONFIG[currentIntensity] || INTENSITY_CONFIG[3];
 
-    let initialDist = 0;
-    let initialScale = 1.0;
-    let isPinching = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (isRemoveMode) return;
-      if (e.touches.length === 2) {
-        const t1 = e.touches[0];
-        const t2 = e.touches[1];
-        initialDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-        initialScale = item.scale ?? 1.0;
-        isPinching = true;
-        onSetActive(item.id);
-        if (e.cancelable) e.preventDefault();
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isPinching || e.touches.length !== 2) return;
-      if (e.cancelable) e.preventDefault();
-
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-      if (initialDist > 0) {
-        const factor = currentDist / initialDist;
-        const nextScale = Math.min(Math.max(Number((initialScale * factor).toFixed(2)), MIN_SCALE), MAX_SCALE);
-        onUpdateScale(item.id, nextScale);
-      }
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (isPinching && e.touches.length < 2) {
-        isPinching = false;
-      }
-    };
-
-    el.addEventListener('touchstart', handleTouchStart, { passive: false });
-    el.addEventListener('touchmove', handleTouchMove, { passive: false });
-    el.addEventListener('touchend', handleTouchEnd, { passive: false });
-    el.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-
-    return () => {
-      el.removeEventListener('touchstart', handleTouchStart);
-      el.removeEventListener('touchmove', handleTouchMove);
-      el.removeEventListener('touchend', handleTouchEnd);
-      el.removeEventListener('touchcancel', handleTouchEnd);
-    };
-  }, [item.id, item.scale, isRemoveMode, onSetActive, onUpdateScale]);
-
-  // Direct drag handle to resize (Pointer events for mouse & touch drag)
-  const handleDragStart = (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startScale = item.scale ?? 1.0;
-
-    const onPointerMove = (moveEvt: PointerEvent) => {
-      moveEvt.preventDefault();
-      const deltaX = moveEvt.clientX - startX;
-      const deltaY = startY - moveEvt.clientY;
-      const delta = (deltaX + deltaY) / 60;
-      const nextScale = Math.min(Math.max(Number((startScale + delta).toFixed(2)), MIN_SCALE), MAX_SCALE);
-      onUpdateScale(item.id, nextScale);
-    };
-
-    const onPointerUp = () => {
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-      window.removeEventListener('pointercancel', onPointerUp);
-    };
-
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-    window.addEventListener('pointercancel', onPointerUp);
-  };
+  // Dynamic scale clamping based on keyword length to protect against horizontal viewport overflow
+  const maxRemForLength = item.title.length > 20 ? 2.6 : item.title.length > 12 ? 3.3 : 4.5;
+  const effectiveScale = Math.min(intensityCfg.scale, maxRemForLength / fontStyle.baseRem);
+  const fontSizeRem = fontStyle.baseRem * effectiveScale;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -356,17 +322,17 @@ const PainPointWord: React.FC<PainPointWordProps> = ({
   return (
     <motion.div
       ref={wordRef}
-      layout
+      layout="position"
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.6 }}
       transition={{ duration: 0.2 }}
       onClick={handleClick}
-      className={`relative inline-flex items-center transition-all duration-200 select-none max-w-full ${
+      className={`relative inline-flex items-center justify-center transition-all duration-200 select-none max-w-full ${
         isRemoveMode
           ? 'cursor-pointer px-2.5 py-1 rounded-xl'
           : isActive
-          ? 'ring-2 ring-[#DA7756]/40 bg-[#DA7756]/5 rounded-xl px-2.5 py-1'
+          ? 'ring-2 ring-[#DA7756]/40 bg-[#DA7756]/5 rounded-xl px-2.5 py-1 scale-105 z-10'
           : 'cursor-pointer px-2 py-0.5 hover:scale-105'
       } ${
         isSelected
@@ -391,26 +357,17 @@ const PainPointWord: React.FC<PainPointWordProps> = ({
         </span>
       )}
 
+      {/* Word with star-determined scale, color, and radiant glow */}
       <span
-        className={`${style.font} ${
-          isSelected ? 'text-red-600' : style.color
-        } tracking-tight leading-tight transition-colors break-words text-center`}
+        className={`${fontStyle.font} ${
+          isSelected ? 'text-red-600' : intensityCfg.textColor
+        } ${intensityCfg.glowClass} ${intensityCfg.opacityClass} tracking-tight leading-tight transition-all break-words text-center flex items-center justify-center`}
       >
-        {item.title}
+        <span>{item.title}</span>
+        {intensityCfg.isFiveAlarm && !isSelected && (
+          <Flame className="inline-block ml-1.5 w-[0.85em] h-[0.85em] text-[#DC2626] fill-[#DC2626] animate-pulse shrink-0 -mt-0.5" />
+        )}
       </span>
-
-      {/* Tactile drag handle visible when this word is active (not in remove mode) */}
-      {isActive && !isRemoveMode && (
-        <div
-          onPointerDown={handleDragStart}
-          data-no-swipe="true"
-          className="ml-1.5 p-1 rounded-full bg-[#DA7756] text-white cursor-nwse-resize touch-none shadow-2xs hover:scale-110 active:scale-95 transition-transform shrink-0"
-          title="Drag horizontally or diagonally to resize"
-          aria-label="Drag to resize word"
-        >
-          <MoveDiagonal2 className="w-2.5 h-2.5 stroke-[2.5]" />
-        </div>
-      )}
     </motion.div>
   );
 };
@@ -439,12 +396,27 @@ export const PainPointsView: React.FC<PainPointsViewProps> = ({ onNavigate }) =>
   });
 
   const [clouds, setClouds] = useState<Record<CloudMode, PainPoint[]>>(() => {
+    const normalizeItem = (item: any): PainPoint => {
+      const intensity =
+        typeof item.intensity === 'number' && item.intensity >= 1 && item.intensity <= 5
+          ? item.intensity
+          : scaleToIntensity(item.scale);
+      const cfg = INTENSITY_CONFIG[intensity] || INTENSITY_CONFIG[3];
+      return {
+        ...item,
+        intensity,
+        scale: cfg.scale,
+      };
+    };
+
     const loadCloud = (key: string, starters: PainPoint[]): PainPoint[] => {
       try {
         const saved = localStorage.getItem(key);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed)) {
+            return parsed.map(normalizeItem);
+          }
         }
       } catch (e) {
         console.error(`Failed to load ${key}`, e);
@@ -513,60 +485,6 @@ export const PainPointsView: React.FC<PainPointsViewProps> = ({ onNavigate }) =>
     setMode(newMode);
   };
 
-  // Chamber-level pinch gesture support when a word is active
-  useEffect(() => {
-    const el = chamberRef.current;
-    if (!el || !activeWordId || isRemoveMode) return;
-
-    let initialDist = 0;
-    let initialScale = 1.0;
-    let isPinching = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        const t1 = e.touches[0];
-        const t2 = e.touches[1];
-        initialDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-        const targetItem = items.find((i) => i.id === activeWordId);
-        initialScale = targetItem?.scale ?? 1.0;
-        isPinching = true;
-        if (e.cancelable) e.preventDefault();
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isPinching || e.touches.length !== 2) return;
-      if (e.cancelable) e.preventDefault();
-
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-      if (initialDist > 0) {
-        const factor = currentDist / initialDist;
-        const nextScale = Math.min(Math.max(Number((initialScale * factor).toFixed(2)), MIN_SCALE), MAX_SCALE);
-        handleUpdateScale(activeWordId, nextScale);
-      }
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (isPinching && e.touches.length < 2) {
-        isPinching = false;
-      }
-    };
-
-    el.addEventListener('touchstart', handleTouchStart, { passive: false });
-    el.addEventListener('touchmove', handleTouchMove, { passive: false });
-    el.addEventListener('touchend', handleTouchEnd, { passive: false });
-    el.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-
-    return () => {
-      el.removeEventListener('touchstart', handleTouchStart);
-      el.removeEventListener('touchmove', handleTouchMove);
-      el.removeEventListener('touchend', handleTouchEnd);
-      el.removeEventListener('touchcancel', handleTouchEnd);
-    };
-  }, [activeWordId, items, isRemoveMode]);
-
   const handleAdd = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = inputVal.trim();
@@ -579,17 +497,24 @@ export const PainPointsView: React.FC<PainPointsViewProps> = ({ onNavigate }) =>
     }
 
     const prefix = mode === 'painpoints' ? 'pain' : mode;
+    const defaultIntensity = 3; // Default to moderate (3 stars)
     const newItem: PainPoint = {
       id: `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: trimmed,
       isCompleted: false,
       createdAt: Date.now(),
-      scale: 1.0,
+      intensity: defaultIntensity,
+      scale: INTENSITY_CONFIG[defaultIntensity].scale,
     };
 
     setItems((prev) => [newItem, ...prev]);
     setInputVal('');
     inputRef.current?.focus();
+
+    // Smoothly scroll chamber to top so newly added word is immediately visible
+    if (chamberRef.current) {
+      chamberRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleToggleRemoveMode = () => {
@@ -637,31 +562,25 @@ export const PainPointsView: React.FC<PainPointsViewProps> = ({ onNavigate }) =>
     setIsRemoveMode(false);
   };
 
-  const handleUpdateScale = (id: string, scale: number) => {
+  const handleUpdateIntensity = (id: string, intensity: number) => {
+    const cfg = INTENSITY_CONFIG[intensity] || INTENSITY_CONFIG[3];
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, scale } : item))
-    );
-  };
-
-  const handleStepScale = (id: string, delta: number) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const current = item.scale ?? 1.0;
-        const next = Math.min(Math.max(Number((current + delta).toFixed(2)), MIN_SCALE), MAX_SCALE);
-        return { ...item, scale: next };
-      })
+      prev.map((item) =>
+        item.id === id ? { ...item, intensity, scale: cfg.scale } : item
+      )
     );
   };
 
   const activeWord = items.find((i) => i.id === activeWordId);
+  const activeIntensity = activeWord ? (activeWord.intensity ?? scaleToIntensity(activeWord.scale)) : 3;
+  const activeIntensityCfg = INTENSITY_CONFIG[activeIntensity] || INTENSITY_CONFIG[3];
   const remainingChars = MAX_CHAR_LIMIT - inputVal.length;
 
   return (
     <main className="flex-1 min-h-0 px-4 md:px-8 py-3.5 md:py-6 max-w-3xl w-full mx-auto overflow-y-auto custom-scrollbar select-none flex flex-col justify-start">
       {/* Top Header & 5-Mode Navigation Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 mb-3 px-1 shrink-0">
-        {/* Mode Switcher Segmented Control (Active tab shows label, inactive show icons) */}
+        {/* Mode Switcher Segmented Control */}
         <div className="flex items-center gap-2 max-w-full overflow-hidden">
           <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar p-1 rounded-2xl bg-[#E6DFD5]/60 border border-[#E6DFD5] shadow-2xs max-w-full">
             {MODES.map((m) => {
@@ -825,37 +744,38 @@ export const PainPointsView: React.FC<PainPointsViewProps> = ({ onNavigate }) =>
         </div>
       </form>
 
-      {/* Confined Word Cloud Chamber (Organic typography with pinch & drag scaling) */}
+      {/* Confined Spatial Word Cloud Chamber (Infinite scroll canvas with safe top anchoring & auto-centering) */}
       <div
         ref={chamberRef}
         onClick={() => setActiveWordId(null)}
-        className="relative w-full min-h-[300px] max-h-[460px] rounded-3xl border border-[#E6DFD5] bg-gradient-to-b from-[#FAF7F2] to-[#F5F0E8]/70 p-4 sm:p-6 flex flex-wrap items-center justify-center content-center gap-2.5 sm:gap-4 overflow-y-auto custom-scrollbar shadow-2xs shrink-0 select-none"
+        className="relative w-full min-h-[320px] max-h-[520px] sm:max-h-[600px] rounded-3xl border border-[#E6DFD5] bg-gradient-to-b from-[#FAF7F2] to-[#F5F0E8]/70 p-4 sm:p-6 overflow-y-auto overscroll-contain custom-scrollbar shadow-2xs shrink-0 select-none flex flex-col"
       >
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center p-6 pointer-events-none">
+          <div className="my-auto flex flex-col items-center justify-center text-center p-6 pointer-events-none">
             <Cloud className="w-8 h-8 text-[#78716A]/40 mb-2" />
             <p className="text-xs text-[#78716A]">{currentConfig.emptyText}</p>
           </div>
         ) : (
-          <AnimatePresence mode="popLayout">
-            {items.map((item, index) => (
-              <PainPointWord
-                key={item.id}
-                item={item}
-                index={index}
-                isRemoveMode={isRemoveMode}
-                isSelected={selectedIds.has(item.id)}
-                isActive={activeWordId === item.id}
-                onToggleSelect={handleToggleSelect}
-                onSetActive={setActiveWordId}
-                onUpdateScale={handleUpdateScale}
-              />
-            ))}
-          </AnimatePresence>
+          <div className="w-full my-auto flex flex-wrap items-center justify-center content-start gap-2.5 sm:gap-4 py-2">
+            <AnimatePresence mode="popLayout">
+              {items.map((item, index) => (
+                <PainPointWord
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  isRemoveMode={isRemoveMode}
+                  isSelected={selectedIds.has(item.id)}
+                  isActive={activeWordId === item.id}
+                  onToggleSelect={handleToggleSelect}
+                  onSetActive={setActiveWordId}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
         )}
       </div>
 
-      {/* Active Word Precision Resize Bar */}
+      {/* Active Word 5-Star Heat & Glow Toolbar */}
       <AnimatePresence>
         {activeWord && !isRemoveMode && (
           <motion.div
@@ -864,45 +784,69 @@ export const PainPointsView: React.FC<PainPointsViewProps> = ({ onNavigate }) =>
             exit={{ opacity: 0, y: 8, height: 0 }}
             className="overflow-hidden mt-3 shrink-0"
           >
-            <div data-no-swipe="true" className="p-2.5 px-3.5 sm:px-4 rounded-2xl bg-white border border-[#E6DFD5] shadow-xs flex items-center justify-between gap-2 sm:gap-3">
+            <div
+              data-no-swipe="true"
+              className="p-2.5 px-3.5 sm:px-4 rounded-2xl bg-white border border-[#E6DFD5] shadow-xs flex flex-wrap items-center justify-between gap-2 sm:gap-3"
+            >
+              {/* Word Title & Current Heat Label */}
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-serif-accent italic font-bold text-[#DA7756] truncate max-w-[110px] sm:max-w-[160px]">
+                <span className="text-xs font-serif-accent italic font-bold text-[#DA7756] truncate max-w-[120px] sm:max-w-[200px]">
                   "{activeWord.title}"
                 </span>
-                <span className="text-[10px] font-mono text-[#78716A] bg-[#FAF7F2] px-1.5 py-0.5 rounded border border-[#E6DFD5]">
-                  {Math.round((activeWord.scale ?? 1.0) * 100)}%
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors ${
+                    activeIntensityCfg.level === 5
+                      ? 'bg-red-50 text-red-600 border-red-300'
+                      : activeIntensityCfg.level === 4
+                      ? 'bg-orange-50 text-orange-600 border-orange-300'
+                      : activeIntensityCfg.level === 3
+                      ? 'bg-amber-50 text-[#DA7756] border-[#EED4C2]'
+                      : activeIntensityCfg.level === 2
+                      ? 'bg-stone-50 text-[#57534E] border-stone-200'
+                      : 'bg-stone-50 text-[#78716A] border-stone-200'
+                  }`}
+                >
+                  {activeIntensityCfg.shortLabel} ({Math.round(activeIntensityCfg.scale * 100)}%)
                 </span>
               </div>
 
-              {/* Slider & Step Controls */}
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 max-w-[200px] sm:max-w-[240px]">
-                <button
-                  type="button"
-                  onClick={() => handleStepScale(activeWord.id, -0.1)}
-                  className="w-6 h-6 rounded-lg bg-[#FAF7F2] hover:bg-[#F5F0E8] border border-[#E6DFD5] text-[#2D2A26] flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
-                  title="Decrease size"
-                >
-                  −
-                </button>
-
-                <input
-                  type="range"
-                  min={MIN_SCALE}
-                  max={MAX_SCALE}
-                  step="0.05"
-                  value={activeWord.scale ?? 1.0}
-                  onChange={(e) => handleUpdateScale(activeWord.id, parseFloat(e.target.value))}
-                  className="w-full accent-[#DA7756] h-1.5 bg-[#FAF7F2] rounded-lg cursor-pointer"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => handleStepScale(activeWord.id, 0.1)}
-                  className="w-6 h-6 rounded-lg bg-[#FAF7F2] hover:bg-[#F5F0E8] border border-[#E6DFD5] text-[#2D2A26] flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
-                  title="Increase size"
-                >
-                  +
-                </button>
+              {/* 5-Star Rating Buttons: Sets both size and heat glow */}
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                {[1, 2, 3, 4, 5].map((starVal) => {
+                  const isFilled = starVal <= activeIntensity;
+                  return (
+                    <button
+                      key={starVal}
+                      type="button"
+                      onClick={() => handleUpdateIntensity(activeWord.id, starVal)}
+                      className="p-1 rounded-lg hover:scale-125 transition-transform cursor-pointer"
+                      title={
+                        starVal === 1
+                          ? '1 Star: Dim (75%)'
+                          : starVal === 5
+                          ? '5 Stars: Five-Alarm Fire 🔥 (450%)'
+                          : `${starVal} Stars (${Math.round(INTENSITY_CONFIG[starVal].scale * 100)}%)`
+                      }
+                      aria-label={`Set heat level to ${starVal} star${starVal > 1 ? 's' : ''}`}
+                    >
+                      <Star
+                        className={`w-5 h-5 transition-colors ${
+                          isFilled
+                            ? starVal === 5
+                              ? 'fill-[#DC2626] text-[#DC2626] filter drop-shadow'
+                              : starVal === 4
+                              ? 'fill-[#EA580C] text-[#EA580C]'
+                              : starVal === 3
+                              ? 'fill-[#DA7756] text-[#DA7756]'
+                              : starVal === 2
+                              ? 'fill-[#C28B54] text-[#C28B54]'
+                              : 'fill-[#78716A] text-[#78716A]'
+                            : 'text-[#E6DFD5] hover:text-[#DA7756]/60'
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Done Button */}
@@ -922,8 +866,8 @@ export const PainPointsView: React.FC<PainPointsViewProps> = ({ onNavigate }) =>
         {isRemoveMode
           ? 'Tap words to select them for removal, then click Confirm.'
           : activeWord
-          ? 'Pinch with two fingers or drag the handle/slider to adjust size.'
-          : 'Tap any word to resize, or use two-finger pinch gesture on mobile.'}
+          ? 'Tap a star (1 = dim, 5 = five-alarm fire 🔥) to adjust size, color, and glow.'
+          : 'Tap any word to adjust its 5-star heat level (controls size, color, and glow).'}
       </p>
     </main>
   );
