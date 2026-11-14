@@ -35,7 +35,7 @@ Unlike traditional task managers that treat every item as an immediate checkable
    - Inputs enforce a hard 26-character ceiling with a live monospace counter.
    - Keeps entries punchy, ensuring even 5-star hero keywords (scaled up to 450%) fit harmoniously within the spatial cloud chamber.
 4. **Companion Bridge Links:**
-   - **Pain Points, IRL Adventures & Projects Modes:** Displays a prominent `Focus View →` button that instantly switches to the 3-goal Focus dashboard ([`docs/FOCUS_VIEW.md`](docs/FOCUS_VIEW.md)).
+   - **Pain Points, IRL Adventures & Projects Modes:** Displays a prominent `Focus View →` button that instantly switches to the 3-goal Focus dashboard ([`FOCUS_VIEW.md`](FOCUS_VIEW.md)).
    - **Media Desires & OOMF Modes:** Displays a prominent `Media View →` button that instantly switches to the active Weekly Media view ([`media.md`](media.md)).
 5. **Deliberate Removal Mode:**
    - A dedicated "Remove" mode lets users intentionally select one or more handled words and confirm their removal in a single calm step.
@@ -104,7 +104,7 @@ export interface PainPoint {
 
 ### 3. Direct Screen Bridge Buttons
 - Direct navigation pill in the header action cluster:
-  - In **Pain Points**, **IRL Adventures**, and **Projects** modes: renders `Focus View →` linking to [`docs/FOCUS_VIEW.md`](docs/FOCUS_VIEW.md).
+  - In **Pain Points**, **IRL Adventures**, and **Projects** modes: renders `Focus View →` linking to [`FOCUS_VIEW.md`](FOCUS_VIEW.md).
   - In **Media Desires** and **OOMF** modes: renders `Media View →` linking to [`media.md`](media.md).
 
 ### 4. Star-Governed Scale & Heat Glow System

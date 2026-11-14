@@ -44,6 +44,7 @@ The app uses warm, earthy paper tones to minimize eye strain and evoke physical 
 - **Sound Synthesis:** Web Audio API (offline, zero-latency harmonic acoustic chimes)
 - **Effects:** Canvas Confetti
 - **Desktop Application Wrapper:** Tauri v2 (Rust backend wrapper)
+- **Mobile Container:** Capacitor (Android native shell)
 - **Persistence:** Synchronous `localStorage` serialization (`the_three_things_app_state_v3`, `the_three_things_media_cards_v1`)
 
 ---
@@ -52,10 +53,16 @@ The app uses warm, earthy paper tones to minimize eye strain and evoke physical 
 
 ```
 the-three-things/
-├── docs/
+├── docs/                      # Central repository context & architectural documentation
+│   ├── README.md              # Project overview, architecture, design system, and docs index
 │   ├── FOCUS_VIEW.md          # In-depth guide: 3 permanent slots, subheader actions (tips & history), slide-to-complete
 │   ├── COMPLETED_VIEW.md      # In-depth guide: history archive, filtering, calendar popover, pagination
-│   └── MEDIA.md               # In-depth guide: Saturday–Friday weekly media, rectangular slots, all-weeks archive
+│   ├── media.md               # In-depth guide: Saturday–Friday weekly media, rectangular slots, all-weeks archive
+│   ├── navbar.md              # Dedicated context guide for the Header & Navigation bar
+│   ├── health.md              # Dedicated context guide for the Health tab
+│   ├── painpoint.md           # Dedicated context guide for the Pain Points tab (spatial word cloud)
+│   ├── notification.md        # Dedicated context guide for Focus Notifications & Cadence
+│   └── build.md               # Dedicated guide for Android APK builds & device deployment
 ├── src/
 │   ├── components/
 │   │   ├── Header.tsx         # Top bar with adaptive expanding tab labels and right-aligned desk-pad controls
@@ -79,13 +86,8 @@ the-three-things/
 │   ├── App.tsx                # Root state, 1:1 touch drag carousel, and view distribution
 │   └── main.tsx               # Application entry point
 ├── src-tauri/                 # Tauri v2 native desktop configuration & Rust files
-├── package.json               # NPM scripts & dependencies
-├── navbar.md                  # Dedicated context guide for the Header & Navigation bar
-├── health.md                  # Dedicated context guide for the Health tab
-├── painpoint.md               # Dedicated context guide for the Pain Points tab
-├── notification.md            # Dedicated context guide for Focus Notifications & Cadence
-├── build.md                   # Dedicated guide for Android APK builds & device deployment
-└── README.md                  # This file
+├── android/                   # Capacitor Android native project & build output
+└── package.json               # NPM scripts & dependencies
 ```
 
 ---
@@ -127,7 +129,7 @@ export interface AppSettings {
 
 ## 📚 View Specifications & Documentation
 
-For detailed functional specifications and component mechanics, refer to the dedicated view guides:
+All architectural context documents and specification guides live together in the `docs/` directory:
 
 - 🧭 **[Navigation Bar Specification](navbar.md)**
   - Adaptive active label vs. inactive icon-only tab interaction
@@ -139,7 +141,7 @@ For detailed functional specifications and component mechanics, refer to the ded
   - Native Capacitor local notifications, high-importance Android channel, and Doze-mode execution
   - Rolling queue algorithm (40 future alarms) and rotating mindful prompt pool
   - Settings UI: master permission toggle, 5-stop cadence slider (15m, 30m, 45m, 1h, Custom)
-- 🎯 **[Focus View Specification](docs/FOCUS_VIEW.md)**
+- 🎯 **[Focus View Specification](FOCUS_VIEW.md)**
   - Fixed 3-card layout rules (`01`, `02`, `03`)
   - Sub-goal separation (`//`), multi-selection, and partial completion mechanics
   - Header actions: left pencil edit icon, centered numerals, right card wipe icon
@@ -147,7 +149,7 @@ For detailed functional specifications and component mechanics, refer to the ded
   - Slide to Complete drag mechanics and threshold physics
   - Sound synthesis & celebration confetti
   - Post-completion actions ("Reset Goal" vs "New Goal")
-- 📜 **[Completed View Specification](docs/COMPLETED_VIEW.md)**
+- 📜 **[Completed View Specification](COMPLETED_VIEW.md)**
   - Decoupled archive data model (unlimited history logging)
   - Timeframe filters: Today, Yesterday, All Time
   - Custom in-app calendar popover with accomplishment activity dots
@@ -173,6 +175,10 @@ For detailed functional specifications and component mechanics, refer to the ded
   - Pure present-moment reminder (completely untracked, zero catch-up prompts or streak pressure)
   - 4 tactile vector items: Toothbrush, Glass of Water, Mouth Wash, Tooth Floss
   - Time-aware display rule: Mouth wash and tooth floss appear only in morning and evening; afternoon gracefully collapses to Toothbrush and Glass of Water
+- 🛠️ **[Build & Android Deployment Guide](build.md)**
+  - Android APK build workflow with Capacitor and Gradle
+  - Local HTTP download server setup for over-the-air device testing
+  - Troubleshooting tips for Gradle/JDK paths and asset sync
 
 ---
 
@@ -184,7 +190,7 @@ For detailed functional specifications and component mechanics, refer to the ded
 | `npm run tauri dev` | Launch the app inside the native Tauri desktop window in dev mode |
 | `npm run build` | Run TypeScript type checks (`tsc`) & production build (`vite build`) |
 | `npm run preview` | Preview production build locally |
-| `npm run build:android` | Build the Android APK (`TheThreeThings.apk`) |
+| `npm run build:android` | Build the Android APK (`TheThreeThings.apk`) — see [build.md](build.md) |
 
 ---
 

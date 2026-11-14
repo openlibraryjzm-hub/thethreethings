@@ -8,7 +8,7 @@
 
 The **Media** tab provides a calm, tactile personal tracker for books, television series, anime, movies, podcasts, and games organized on an editorial **weekly cadence**.
 
-It transitions the app to an intentional 7-day focus. It retains the same warm stationery aesthetic as the **Focus** and **Completed** views, prioritizing visual calm, clear hierarchy, and zero clutter.
+It transitions the app from a monthly overview to an intentional 7-day focus. It retains the same warm stationery aesthetic as the **Focus** and **Completed** views, prioritizing visual calm, clear hierarchy, and zero clutter.
 
 ### 🔒 Core Design Principles
 1. **Saturday–Friday Weekly Cadence:** Weeks follow an unorthodox, lifestyle-first cadence starting on **Saturday** and ending on **Friday**. Saturday and Sunday act as the first 2 weekend kick-off days, followed by Monday through Friday as the remaining 5 weekday completion days (e.g. `Nov 7 – 13, 2026`). Every date in the calendar strictly partitions into one 7-day Saturday–Friday block.
@@ -17,7 +17,7 @@ It transitions the app to an intentional 7-day focus. It retains the same warm s
 4. **Secondary Heavily-Shrunk Archive Page:** A secondary overview page presents all past and present weeks as compact, heavily shrunk and truncated preview cards, creating an easily scrollable chronological visual timeline.
 5. **Full-Fidelity Archived View with Disclaimer:** Clicking any shrunk card in the archive opens that week in full view, complete with a prominent disclaimer banner indicating that the user is browsing historical media logs.
 6. **Self-Contained Media Model:** Media completions trigger Web Audio harmonic acoustic chimes and confetti, but remain self-contained within the Media space and do not pollute the primary daily Focus accomplishment history.
-7. **Spatial Media Desires Cloud:** For broad backlogs, genres, and wishlist titles without cluttering the active weekly card, users reference the rock-solid **Media Desires Word Cloud** located in the Pain Points tab ([`painpoint.md`](../painpoint.md)).
+7. **Spatial Media Desires Cloud:** For broad backlogs, genres, and wishlist titles without cluttering the active weekly card, users reference the rock-solid **Media Desires Word Cloud** located in the Pain Points tab ([`painpoint.md`](painpoint.md)).
 
 ---
 
@@ -74,7 +74,7 @@ Arranged in an airy responsive grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 
     - **Level 4 (Immersive Dive):** Deep coral with enhanced weight and shadow (`text-[#C84A22]`, 4 dots).
     - **Level 5 (Marathon Peak 🌟):** Radiant golden amber (`text-[#D97706]`, 5 dots, ambient glow). Reaching Level 5 triggers golden confetti.
   - **Docked Level Adjuster Bar (Stepper UI):**
-    - Tapping an inactive day immediately activates it to Level 1, plays a tactile chime ([`playCompletionSound()`](../src/utils/sound.ts)), and opens the slim docked adjuster bar beneath the day strip.
+    - Tapping an inactive day immediately activates it to Level 1, plays a tactile chime ([`playCompletionSound()`](file:///c:/Users/GGPC/Desktop/todaysthree/src/utils/sound.ts)), and opens the slim docked adjuster bar beneath the day strip.
     - Tapping an active day opens the docked bar displaying the focused day and its active level: e.g. `Tuesday · Level 3: Deep Focus`.
     - Includes **`+` and `−` stepper buttons** to quickly adjust engagement up to 5 or down to 0, avoiding awkward cycling.
     - Includes a quick `Done` dismiss action. Tapping another day shifts focus instantly.
@@ -129,7 +129,7 @@ Renders the exact large card layout for that selected week, enabling full inspec
 
 ## 🔑 Data Models
 
-Defined in [`src/types/index.ts`](../src/types/index.ts):
+Defined in [`src/types/index.ts`](file:///c:/Users/GGPC/Desktop/todaysthree/src/types/index.ts):
 
 ```typescript
 export type DayKey = 'Sa' | 'Su' | 'Mo' | 'Tu' | 'We' | 'Th' | 'Fr';
