@@ -30,7 +30,7 @@ Unlike traditional task managers that treat every item as an immediate checkable
      - **2 Stars (Mild):** `1.20x` (120% scale), mild earthy charcoal (`text-[#645E57]`), clear baseline presence.
      - **3 Stars (Moderate):** `1.90x` (190% scale), deep charcoal (`text-[#2D2A26]`), active daily priority.
      - **4 Stars (High Heat):** `3.00x` (300% scale), vibrant terracotta-orange (`text-[#DA7756]`), ambient warm glow.
-     - **5 Stars (Five-Alarm Fire 🔥):** `4.50x` (450% scale), blazing crimson (`text-[#DC2626]`), dual fiery radiant aura, and pulsating flame icon.
+     - **5 Stars (Five-Alarm Fire 🔥):** `4.50x` (450% scale), blazing crimson (`text-[#DC2626]`), and dual fiery radiant aura.
 3. **Strict Character Constraint (`MAX_CHAR_LIMIT = 26`):**
    - Inputs enforce a hard 26-character ceiling with a live monospace counter.
    - Keeps entries punchy, ensuring even 5-star hero keywords (scaled up to 450%) fit harmoniously within the spatial cloud chamber.
@@ -116,7 +116,7 @@ Instead of manual sliders or drag knobs, each word's scale, color, and glow are 
 | **2 Stars (Mild)** | `1.20x` (120%) | Medium | `text-[#645E57]` | None (clean baseline presence) |
 | **3 Stars (Moderate)** | `1.90x` (190%) | Bold | `text-[#2D2A26]` | `drop-shadow-[0_1px_2px_rgba(45,42,38,0.18)]` |
 | **4 Stars (High Heat)** | `3.00x` (300%) | ExtraBold | `text-[#DA7756]` | `drop-shadow-[0_2px_12px_rgba(218,119,86,0.45)]` |
-| **5 Stars (Five-Alarm Fire)** | `4.50x` (450%) | Black | `text-[#DC2626]` | Dual-layer crimson aura + pulsating flame 🔥 |
+| **5 Stars (Five-Alarm Fire)** | `4.50x` (450%) | Black | `text-[#DC2626]` | Dual-layer crimson aura |
 
 ### 5. Docked 5-Star Toolbar
 - Tapping any word in the cloud selects it and reveals a docked 5-star toolbar at the bottom of the chamber.
