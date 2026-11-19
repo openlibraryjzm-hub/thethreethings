@@ -13,7 +13,6 @@ import {
   Trash2,
   Check,
   Star,
-  Flame,
 } from 'lucide-react';
 import { PainPoint, ActiveView } from '../types';
 
@@ -37,7 +36,6 @@ export interface IntensityLevelConfig {
   textColor: string;
   glowClass: string;
   opacityClass: string;
-  isFiveAlarm: boolean;
 }
 
 export const INTENSITY_CONFIG: Record<number, IntensityLevelConfig> = {
@@ -49,7 +47,6 @@ export const INTENSITY_CONFIG: Record<number, IntensityLevelConfig> = {
     textColor: 'text-[#78716A]/50',
     glowClass: '',
     opacityClass: 'opacity-55 hover:opacity-85',
-    isFiveAlarm: false,
   },
   2: {
     level: 2,
@@ -59,7 +56,6 @@ export const INTENSITY_CONFIG: Record<number, IntensityLevelConfig> = {
     textColor: 'text-[#645E57]',
     glowClass: '',
     opacityClass: 'opacity-85 hover:opacity-100',
-    isFiveAlarm: false,
   },
   3: {
     level: 3,
@@ -69,7 +65,6 @@ export const INTENSITY_CONFIG: Record<number, IntensityLevelConfig> = {
     textColor: 'text-[#2D2A26]',
     glowClass: 'drop-shadow-[0_1px_2px_rgba(45,42,38,0.18)]',
     opacityClass: 'opacity-100',
-    isFiveAlarm: false,
   },
   4: {
     level: 4,
@@ -79,7 +74,6 @@ export const INTENSITY_CONFIG: Record<number, IntensityLevelConfig> = {
     textColor: 'text-[#DA7756]',
     glowClass: 'drop-shadow-[0_2px_12px_rgba(218,119,86,0.45)]',
     opacityClass: 'opacity-100',
-    isFiveAlarm: false,
   },
   5: {
     level: 5,
@@ -89,7 +83,6 @@ export const INTENSITY_CONFIG: Record<number, IntensityLevelConfig> = {
     textColor: 'text-[#DC2626]',
     glowClass: 'drop-shadow-[0_0_16px_rgba(220,38,38,0.6)] drop-shadow-[0_0_32px_rgba(239,68,68,0.35)]',
     opacityClass: 'opacity-100',
-    isFiveAlarm: true,
   },
 };
 
@@ -364,9 +357,6 @@ const PainPointWord: React.FC<PainPointWordProps> = ({
         } ${intensityCfg.glowClass} ${intensityCfg.opacityClass} tracking-tight leading-tight transition-all break-words text-center flex items-center justify-center`}
       >
         <span>{item.title}</span>
-        {intensityCfg.isFiveAlarm && !isSelected && (
-          <Flame className="inline-block ml-1.5 w-[0.85em] h-[0.85em] text-[#DC2626] fill-[#DC2626] animate-pulse shrink-0 -mt-0.5" />
-        )}
       </span>
     </motion.div>
   );
